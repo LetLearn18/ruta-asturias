@@ -121,6 +121,7 @@ nav.tabs svg{width:22px;height:22px}
 .toast{position:fixed;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top,0));z-index:20;background:var(--fg);color:var(--bg);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:528px;margin:0 auto}
 .toast img{width:48px;height:48px;border-radius:10px;object-fit:cover;flex:none}
 footer{font-size:.75rem;color:var(--muted);padding-bottom:10px}
+.an{width:6.5rem;text-align:center;font-size:.95rem;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .photo-cta{border:2px solid var(--moss);background:var(--moss-soft)}
 .album{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .album .ph{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--moss-soft);border:0;padding:0;cursor:pointer}
@@ -196,12 +197,16 @@ footer{font-size:.75rem;color:var(--muted);padding-bottom:10px}
     </div>
     <div class="card">
       <h2 style="font-size:1.1rem">Datos a mano</h2>
-      <div class="row"><span>Tren ida 4R 4091</span><span>Lun 09:15 → 12:44</span></div>
-      <div class="row"><span>Tren vuelta 4R 4190</span><span>Mié 18:56 → 22:25</span></div>
+      <div class="row"><span>Ida · Alvia 04091 · lun 09:15 → 12:44</span><b class="mono">Coche 8 · M 2D · V 2C</b></div>
+      <div class="row"><span>Andén ida (Chamartín)</span><input class="an mono" id="anIda" inputmode="text" maxlength="4" placeholder="pendiente" aria-label="Andén de ida"></div>
+      <div class="row"><span>Vuelta · Avlo 04190 · mié 18:56 → 22:25</span><b class="mono">Coche 3 · M 7A · V 7B</b></div>
+      <div class="row"><span>Andén vuelta (Oviedo)</span><input class="an mono" id="anVuelta" inputmode="text" maxlength="4" placeholder="pendiente" aria-label="Andén de vuelta"></div>
+      <span style="font-size:.78rem;color:var(--muted)">M y V son las iniciales de los dos billetes. El andén no viene en el billete: se anuncia en el panel unos 15–20 min antes. Escribidlo aquí y se guarda en este móvil.</span>
       <div class="row"><span>Hotel Eladia · Av. Covadonga 14</span><a class="mono" href="tel:+34985848000">985 84 80 00</a></div>
       <div class="row"><span>Bus ALSA Oviedo ⇄ Cangas</span><span>~7–8 € · 1 h 20–1 h 35</span></div>
       <div class="row"><span>Bus a los Lagos (ida y vuelta)</span><span>9 €</span></div>
-      <div class="note"><b>Ojo:</b> el tren de vuelta aparecía «en proceso». Comprobad que está confirmado.</div>
+      <div class="note"><b>Equipaje de vuelta (Avlo):</b> incluye un bolso de mano (27×36×25 cm) y una maleta de cabina (55×35×25 cm). Una maleta grande extra (máx. 85×60×35 cm) cuesta 10 € online o 15 € en la estación, y solo una por billete.</div>
+      <div class="note"><b>Acceso al tren:</b> el embarque abre 30 min antes y el acceso se cierra 2 min antes de la salida.</div>
     </div>
   </section>
 
@@ -286,7 +291,7 @@ footer{font-size:.75rem;color:var(--muted);padding-bottom:10px}
 const FP=(f,w=900)=>`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(f)}?width=${w}`;
 const STOPS=[
  {id:"cha",name:"Chamartín",sub:"Tren a Oviedo · lunes 09:15",lat:40.4722,lng:-3.6828,r:500,
-  file:"Madrid_-_Estación_de_Chamartín_6.JPG",msg:"Tren 4R 4091 a las 09:15.",photoMsg:"Primera foto del viaje: los dos en Chamartín antes de subir al tren."},
+  file:"Madrid_-_Estación_de_Chamartín_6.JPG",msg:"Alvia 04091 a las 09:15 · coche 8.",photoMsg:"Primera foto del viaje: los dos en Chamartín antes de subir al tren."},
  {id:"ovi",name:"Oviedo",sub:"Cambio tren → bus · lunes 12:44",lat:43.3674,lng:-5.8563,r:700,
   file:"Catedral_de_Oviedo_03.jpg",msg:"La estación de autobuses está al lado. Bus a Cangas a las 13:15.",photoMsg:"Foto rápida al llegar a Oviedo, antes del bus a Cangas."},
  {id:"can",name:"Cangas de Onís",sub:"Hotel Eladia · 2 noches",lat:43.35090,lng:-5.12843,r:800,
@@ -300,8 +305,8 @@ STOPS.forEach(s=>{s.img=FP(s.file);s.thumb=FP(s.file,300);s.page="https://common
 const DATE={lun:"2026-10-05",mar:"2026-10-06",mie:"2026-10-07"};
 const DAYS=[
  {key:"lun",title:"Lunes 5",sub:"Ida y primera tarde",ev:[
-  {s:"08:30",e:"09:15",stop:0,tag:"tren",title:"Llegar a Chamartín",txt:"Maletas: 2 facturadas y una pequeña cada uno."},
-  {s:"09:15",e:"12:44",from:0,to:1,tag:"tren",title:"Tren Chamartín → Oviedo",txt:"Renfe 4R 4091, turista."},
+  {s:"08:30",e:"09:15",stop:0,tag:"tren",train:"ida",title:"Llegar a Chamartín",txt:"Coche 8 · plazas 2C y 2D. Renfe no factura maletas: van con vosotros (máx. 3 bultos por persona, 25 kg en total)."},
+  {s:"09:15",e:"12:44",from:0,to:1,tag:"tren",train:"ida",title:"Tren Chamartín → Oviedo",txt:"Alvia 04091 · coche 8 · plazas 2C y 2D. Cierre de acceso 2 min antes."},
   {s:"12:44",e:"13:15",stop:1,tag:"bus",title:"Cambio a la estación de autobuses",txt:"Pegada a la de tren, 5 min andando."},
   {s:"13:15",e:"14:50",from:1,to:2,tag:"bus",title:"Bus ALSA Oviedo → Cangas",txt:"Plan B: 14:30 → 16:05."},
   {s:"14:50",e:"15:30",stop:2,tag:"hotel",title:"Check-in Hotel Eladia",txt:"Sin recepción fija: llamad antes al 985 84 80 00."},
@@ -318,8 +323,8 @@ const DAYS=[
   {s:"09:00",e:"12:00",stop:2,tag:"hotel",title:"Check-out",txt:"Hasta las 12:00. Preguntad si os guardan las maletas."},
   {s:"12:00",e:"14:00",stop:2,tag:"plan",title:"Comida y compras",txt:"Queso Cabrales y sidra para llevar."},
   {s:"14:15",e:"15:50",from:2,to:1,tag:"bus",title:"Bus ALSA Cangas → Oviedo",txt:"Plan B 15:15 → 16:50; último seguro 16:15."},
-  {s:"15:50",e:"18:35",stop:1,tag:"plan",title:"Paseo por Oviedo",txt:"Catedral, Fontán, Gascona. 20 min de margen para el tren."},
-  {s:"18:56",e:"22:25",from:1,to:0,tag:"tren",title:"Tren Oviedo → Chamartín",txt:"Renfe 4R 4190. Llegada 22:25."}]}
+  {s:"15:50",e:"18:35",stop:1,tag:"plan",train:"vuelta",title:"Paseo por Oviedo",txt:"Catedral, Fontán, Gascona. 20 min de margen para el tren."},
+  {s:"18:56",e:"22:25",from:1,to:0,tag:"tren",train:"vuelta",title:"Tren Oviedo → Chamartín",txt:"Avlo 04190 · coche 3 · plazas 7A y 7B. Embarque 30 min antes; llegada 22:25."}]}
 ];
 const ts=(d,h)=>new Date(`${d}T${h}:00+02:00`).getTime();
 const ALL=[];DAYS.forEach(d=>d.ev.forEach((e,i)=>{e.S=ts(DATE[d.key],e.s);e.E=ts(DATE[d.key],e.e);e.id=d.key+i;ALL.push(e)}));
@@ -332,6 +337,7 @@ let visited=LS.get("visited",{}), pos=null, insideId=null, lastStopIdx=0, ctaDis
 const $=id=>document.getElementById(id);
 const hav=(a,b,c,d)=>{const R=6371e3,t=x=>x*Math.PI/180,dl=t(c-a),dn=t(d-b),h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 const fmtD=m=>m<1000?Math.round(m)+" m":(m/1000).toFixed(m<10000?1:0).replace(".",",")+" km";
+const anden=e=>{const a=e&&e.train?LS.get(e.train==="ida"?"anIda":"anVuelta",""):"";return a?" · Andén "+a:""};
 const dur=ms=>{ms=Math.max(0,ms);const m=Math.round(ms/6e4),d=Math.floor(m/1440),h=Math.floor(m%1440/60),mm=m%60;return d?`${d} d ${h} h`:h?`${h} h ${mm} min`:`${mm} min`};
 
 // Paradas
@@ -382,8 +388,8 @@ function tick(){
  // Ahora
  if(now<T0){$("nowLabel").textContent="Cuenta atrás";$("nowTitle").textContent="Faltan "+dur(T0-now);$("nowSub").textContent="Primero: llegar a Chamartín (lunes 08:30).";$("nowBarW").hidden=true;$("nowCount").textContent=""}
  else if(now>=T1){$("nowLabel").textContent="Fin del viaje";$("nowTitle").textContent="Ya en Madrid";$("nowSub").textContent="";$("nowBarW").hidden=true;$("nowCount").textContent=""}
- else if(cur){$("nowLabel").textContent="Ahora · "+cur.s+"–"+cur.e;$("nowTitle").textContent=cur.title;$("nowSub").textContent=cur.txt;$("nowBarW").hidden=false;$("nowBar").style.width=((now-cur.S)/(cur.E-cur.S)*100).toFixed(1)+"%";$("nowCount").textContent=(cur.from!=null?"Llegada en ":"Termina en ")+dur(cur.E-now)}
- else{$("nowLabel").textContent="Tiempo libre";$("nowTitle").textContent="Siguiente: "+nextEv.title;$("nowSub").textContent=nextEv.txt;$("nowBarW").hidden=true;$("nowCount").textContent="Empieza en "+dur(nextEv.S-now)+" ("+nextEv.s+")"}
+ else if(cur){$("nowLabel").textContent="Ahora · "+cur.s+"–"+cur.e;$("nowTitle").textContent=cur.title;$("nowSub").textContent=cur.txt+anden(cur);$("nowBarW").hidden=false;$("nowBar").style.width=((now-cur.S)/(cur.E-cur.S)*100).toFixed(1)+"%";$("nowCount").textContent=(cur.from!=null?"Llegada en ":"Termina en ")+dur(cur.E-now)}
+ else{$("nowLabel").textContent="Tiempo libre";$("nowTitle").textContent="Siguiente: "+nextEv.title;$("nowSub").textContent=nextEv.txt+anden(nextEv);$("nowBarW").hidden=true;$("nowCount").textContent="Empieza en "+dur(nextEv.S-now)+" ("+nextEv.s+")"}
  // KPIs
  const tgt=nextStop>=0?nextStop:(curStop>=0?curStop:0);
  if(pos){$("kDist").textContent=gpsStop>=0&&nextStop<0?"Aquí":fmtD(hav(pos.lat,pos.lng,STOPS[tgt].lat,STOPS[tgt].lng));$("kDistL").textContent="hasta "+STOPS[tgt].name}
@@ -452,6 +458,7 @@ $("camInput").addEventListener("change",async e=>{
  const rec={id:"f"+Date.now(),stop:s.id,ts:Date.now(),blob};
  try{await DB.put(rec)}catch(err){alert("No se pudo guardar la foto: el móvil no tiene espacio o bloquea el almacenamiento.");return}
  $("photoCta").hidden=true;await loadPhotos();
+[["anIda","anIda"],["anVuelta","anVuelta"]].forEach(([id,k])=>{const el=$(id);if(!el)return;el.value=LS.get(k,"");el.addEventListener("input",()=>{LS.set(k,el.value.trim());tick()})});
  $("toastImg").src=URL.createObjectURL(blob);$("toastT").textContent="Foto guardada";$("toastS").textContent="En el álbum: "+s.name;$("toastBtn").hidden=true;$("toast").hidden=false;setTimeout(()=>$("toast").hidden=true,4000);
 });
 $("album").addEventListener("click",e=>{
@@ -535,6 +542,7 @@ function updateMap(){
 
 tick();setInterval(tick,30000);
 loadPhotos();
+[["anIda","anIda"],["anVuelta","anVuelta"]].forEach(([id,k])=>{const el=$(id);if(!el)return;el.value=LS.get(k,"");el.addEventListener("input",()=>{LS.set(k,el.value.trim());tick()})});
 (()=>{const f=new URLSearchParams(location.search).get("foto");const i=STOPS.findIndex(s=>s.id===f);if(i>=0){askPhoto(i);history.replaceState(null,"",location.pathname)}})();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
