@@ -1,4 +1,4 @@
-const C="ruta-asturias-v1";
+const C="ruta-asturias-v2";
 const CORE=["./","index.html","manifest.webmanifest","icon-192.png","apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
@@ -11,4 +11,11 @@ self.addEventListener("fetch",e=>{
     e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(r,cp));return res})));
   }
 });
-self.addEventListener("notificationclick",e=>{e.notification.close();e.waitUntil(self.clients.matchAll({type:"window"}).then(cs=>cs.length?cs[0].focus():self.clients.openWindow("./")))});
+self.addEventListener("notificationclick",e=>{
+  e.notification.close();
+  const url=(e.notification.data&&e.notification.data.url)||"./";
+  e.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>{
+    for(const c of cs){if("navigate" in c){return c.navigate(url).then(w=>(w||c).focus())}}
+    return self.clients.openWindow(url);
+  }));
+});
