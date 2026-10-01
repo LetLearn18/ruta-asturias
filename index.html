@@ -475,12 +475,13 @@ function render(){
  lastLvl=lv;lastXp=S.xp;
 
  // Misión principal
- const act=secOf(mine).filter(m=>!mine.done[m.id]);
- $("secWho").textContent=NAMES[rival]+" no la ve";
+ const tkMain=todayKey();
+ const act=secOf(mine).filter(m=>!mine.done[m.id]&&(m.event||m.day===tkMain));
+ $("secWho").textContent="1 foto + 1 vídeo al día · "+NAMES[rival]+" no las ve";
  let h="";
  const hm=t=>new Date(t).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Madrid"});
- if(act.length){h=act.sort((x,y)=>(y.event?1:0)-(x.event?1:0)).map(m=>`<div class="main ${m.event?"ev":""}" data-id="${m.id}" style="margin-bottom:12px"><span class="tag">${m.event?"Evento · solo hasta las "+hm(m.until):"Principal"} · ${m.kind==="video"?"vídeo":"foto"}</span><h3>${m.t.replace(/\{r\}/g,"tu rival")}</h3><p>${m.kind==="video"?"Máx. 15 segundos. ":""}Sin que se entere ${NAMES[rival]}.</p><div class="row"><div class="xpbig">+${m.xp}<small>XP</small></div><button class="btn go">${m.kind==="video"?"Grabar":"Foto"}</button></div></div>`).join("")}
- else{h=`<div class="main wait"><span class="tag">Principal</span><h3>${secOf(mine).length?"Principal cumplida":"Aún no hay misión principal"}</h3><p>${mine.next?"La siguiente llega en":"Llegarán solas. Activa los avisos para enterarte."}</p>${mine.next?`<div class="cd" id="cd" data-t="${mine.next}">--:--</div>`:""}</div>`}
+ if(act.length){h=act.sort((x,y)=>(y.event?1:0)-(x.event?1:0)||(x.kind==="photo"?-1:1)).map(m=>`<div class="main ${m.event?"ev":""}" data-id="${m.id}" style="margin-bottom:12px"><span class="tag">${m.event?"Evento · solo hasta las "+hm(m.until):"Principal"} · ${m.kind==="video"?"vídeo":"foto"}</span><h3>${m.t.replace(/\{r\}/g,"tu rival")}</h3><p>${m.kind==="video"?"Máx. 15 segundos. ":""}Sin que se entere ${NAMES[rival]}.</p><div class="row"><div class="xpbig">+${m.xp}<small>XP</small></div><button class="btn go">${m.kind==="video"?"Grabar":"Foto"}</button></div></div>`).join("")}
+ else{h=`<div class="main wait"><span class="tag">Principal</span><h3>${secOf(mine).some(m=>m.day===tkMain)?"Principales de hoy cumplidas":"Aún no hay misiones principales"}</h3><p>${mine.next?"Las de mañana llegan a las 09:00. Faltan":"Se reparten solas cada día a las 09:00. Activa los avisos para enterarte."}</p>${mine.next?`<div class="cd" id="cd" data-t="${mine.next}">--:--</div>`:""}</div>`}
  const doneS=secOf(mine).filter(m=>mine.done[m.id]);
  if(doneS.length)h+=`<p class="mute" style="font-size:13px;margin:10px 2px 0">Cumplidas: ${doneS.map(m=>m.short).join(" · ")}</p>`;
  $("secList").innerHTML=h;

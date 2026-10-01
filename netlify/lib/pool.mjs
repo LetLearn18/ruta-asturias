@@ -2,6 +2,7 @@
 // Para añadir una: id único que empiece por "s-" (a-z, 0-9, guiones, máx. 40), kind "photo" o "video", xp, short y t.
 // sticker: emoji que la app pega sobre la foto (opcional). La primera de cada jugador siempre es FIRST_ID.
 export const FIRST_ID = null; // si pones un id, será la primera principal de cada jugador
+// days: ["mar"] = solo se reparte ese día (los lagos son el martes).
 // win: [[inicio, fin], ...]. Misión de evento (durmiendo: noches del lunes y martes; tren: ida y vuelta): solo se reparte si en ese momento estás en esa franja
 // (extra, no cuenta como la principal en curso) y caduca al terminar si no se cumple.
 export const POOL = [
@@ -10,7 +11,7 @@ export const POOL = [
   { id: "s-tren-vuelta", kind: "photo", xp: 130, short: "Rival en el tren (vuelta)", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-07T18:56:00+02:00", "2026-10-07T22:25:00+02:00"]] },
   { id: "s-durmiendo-lun", kind: "photo", xp: 200, short: "Rival dormido (lunes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-05T23:00:00+02:00", "2026-10-06T08:00:00+02:00"]] },
   { id: "s-durmiendo-mar", kind: "photo", xp: 200, short: "Rival dormido (martes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-06T23:00:00+02:00", "2026-10-07T08:00:00+02:00"]] },
-  { id: "s-lagos", kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
+  { id: "s-lagos", days: ["mar"], kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
   { id: "s-andando", kind: "video", xp: 160, short: "Rival andando", t: "Graba a {r} andando sin que se dé cuenta." },
   { id: "s-fuente", kind: "video", xp: 170, short: "Bebiendo en la fuente", t: "Graba a {r} bebiendo de la fuente de la capilla." },
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },

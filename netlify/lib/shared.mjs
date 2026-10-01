@@ -72,22 +72,36 @@ export function tick(pl, name, owners = {}) {
     pl.secret.push({ ...m, at: now, until: new Date(w[1]).getTime(), event: true });
     changed = true; added = true;
   }
-  // 3) misión principal normal: una a la vez
-  const normal = pl.secret.filter((m) => !m.event);
-  const act = normal.filter((s) => !pl.done[s.id]);
+  // 3) misiones principales normales: 2 por día (1 foto + 1 vídeo), desde las 09:00 de cada día
   const pool = POOL.filter((m) => !isEvent(m));
-  if (normal.length >= pool.length || quietHours()) return { changed, added };
-  const lastDone = Math.max(0, ...normal.map((s) => pl.done[s.id]?.ts || 0));
-  const lastUn = Math.max(0, ...normal.map((s) => s.at));
-  const due = normal.length === 0
-    || (act.length === 0 && now - lastDone >= COOLDOWN)
-    || (act.length < MAX_ACTIVE && now - lastUn >= UNLOCK_EVERY);
-  if (!due) return { changed, added };
-  const used = new Set(pl.secret.map((s) => s.id));
-  const free = pool.filter((m) => !used.has(m.id));
-  const first = normal.length === 0 && free.find((m) => m.id === FIRST_ID);
-  pl.secret.push({ ...(first || free[Math.floor(Math.random() * free.length)]), at: now });
-  return { changed: true, added: true };
+  for (const d of DAYKEYS) {
+    if (!dayOpen(d, now)) continue;
+    if (pl.secret.some((x) => !x.event && x.day === d)) continue;
+    const used = new Set(pl.secret.map((x) => x.id));
+    const pick = (kind) => {
+      const ok = (m) => m.kind === kind && (!m.days || m.days.includes(d));
+      let free = pool.filter((m) => ok(m) && !used.has(m.id));
+      if (!free.length) free = pool.filter(ok); // si se acaban, se repite alguna
+      // si el día tiene una misión que solo vale hoy (los lagos), va primero
+      const only = free.filter((m) => m.days);
+      if (only.length) free = only;
+      return free[Math.floor(Math.random() * free.length)];
+    };
+    for (const kind of ["photo", "video"]) {
+      const m = pick(kind);
+      if (!m) continue;
+      used.add(m.id);
+      pl.secret.push({ ...m, id: m.id, at: now, day: d });
+    }
+    changed = true; added = true;
+  }
+  return { changed, added };
+}
+
+function dayOpen(d, now) {
+  if (Netlify.context?.deploy?.context !== "production") return true; // preview: todos los días, para probar
+  const t = new Date(DAYSTART[d]).getTime() + 9 * 3600e3;
+  return now >= t && now <= END;
 }
 
 // Sorteo (una sola vez) de a quién le toca cada evento, a partes iguales.
@@ -109,13 +123,13 @@ export async function eventOwners() {
 
 export function nextUnlock(pl) {
   const now = Date.now();
-  if (!inWindow()) return now < START ? START : null;
-  const normal = (pl.secret || []).filter((m) => !m.event);
-  if (normal.length >= POOL.filter((m) => !isEvent(m)).length) return null;
-  const act = normal.filter((s) => !pl.done[s.id]);
-  if (act.length) return null; // hasta cumplir la actual no llega otra
-  const lastDone = Math.max(0, ...normal.map((s) => pl.done[s.id]?.ts || 0));
-  return Math.max(now, lastDone + COOLDOWN);
+  if (!inWindow()) return now < START ? new Date(DAYSTART.lun).getTime() + 9 * 3600e3 : null;
+  if (Netlify.context?.deploy?.context !== "production") return null;
+  for (const d of DAYKEYS) {
+    const t = new Date(DAYSTART[d]).getTime() + 9 * 3600e3;
+    if (t > now) return t; // el siguiente día que aún no se ha abierto
+  }
+  return null;
 }
 
 // ---- Misiones secundarias: 5 al azar por jugador y día ----
