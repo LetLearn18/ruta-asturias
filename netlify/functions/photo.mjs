@@ -30,6 +30,7 @@ export default async (req) => {
     if (!ext) return json({ error: "Formato no admitido" }, 415);
     const cur = await readPlayer(player);
     if (mission.startsWith("s-") && !(cur.secret || []).some((m) => m.id === mission)) return json({ error: "Esa misión no es tuya" }, 403);
+    if (mission.startsWith("d-") && !Object.values(cur.daily || {}).flat().some((m) => m.id === mission)) return json({ error: "Esa misión no es tuya" }, 403);
     const buf = await req.arrayBuffer();
     if (!buf.byteLength) return json({ error: "La foto está vacía" }, 400);
     if (buf.byteLength > MAX_BYTES) return json({ error: "El archivo pesa demasiado (máx. 5,5 MB)" }, 413);

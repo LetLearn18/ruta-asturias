@@ -16,7 +16,7 @@ export default async (req) => {
     try { body = await req.json(); } catch { return json({ error: "Petición no válida" }, 400); }
     if (body?.check) return json({ ok: true });
     const { player, mission, done } = body || {};
-    if (!PLAYERS.includes(player) || !MISSION_RE.test(mission || "") || mission.startsWith("s-")) return json({ error: "Viajero o misión no válidos" }, 400);
+    if (!PLAYERS.includes(player) || !MISSION_RE.test(mission || "") || (mission.startsWith("s-") || mission.startsWith("d-"))) return json({ error: "Viajero o misión no válidos" }, 400);
     const cur = await readPlayer(player);
     if (done) cur.done[mission] = { ...(cur.done[mission] || {}), ts: Date.now() };
     else delete cur.done[mission];

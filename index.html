@@ -117,6 +117,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .q.lock{opacity:.55}
 .q.r-rar{border-color:#4da3ff66}.q.r-epi{border-color:#a97bff88}.q.r-leg{border-color:#ffb02099}
 
+/* días deslizables */
+.days{display:flex;gap:6px;margin:0 0 10px}
+.days button{flex:1;border:1px solid var(--edge);background:var(--glass);border-radius:16px;padding:9px 4px;font:700 13px var(--b);color:var(--txt);display:grid;gap:1px;justify-items:center}
+.days button small{font:500 11px var(--b);color:var(--mute)}
+.days button.on{background:var(--txt);color:#1a0a2e;border-color:var(--txt)}
+.days button.on small{color:#1a0a2e99}
+.days button.lk{opacity:.5;filter:grayscale(1)}
+.swipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:12px;margin:0 -16px;padding:0 16px}
+.swipe::-webkit-scrollbar{display:none}
+.pane{flex:0 0 100%;scroll-snap-align:center;min-width:0}
+.pane.lk{filter:grayscale(1);opacity:.7}
 /* radar */
 .radar{display:flex;align-items:center;gap:10px;font-size:14px}
 .radar .dot{width:12px;height:12px;border-radius:50%;background:var(--edge);flex:none}
@@ -251,7 +262,9 @@ nav .badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:16px;heigh
    <div class="sec-h"><h2>Misión principal</h2><span class="px" id="secWho"></span></div>
    <div id="secList"></div>
    <div class="sec-h"><h2>Secundarias</h2><span class="px" id="dayLbl"></span></div>
-   <div id="dailyList"></div>
+   <div class="days" id="dayTabs"></div>
+   <div class="swipe" id="swipe"></div>
+   <div id="simBox" hidden></div>
    <div class="sec-h"><h2>Zonas</h2><span class="px">GPS</span></div>
    <div class="panel radar"><span class="dot" id="gDot"></span><span id="gTxt">Radar apagado</span><button class="btn sm" id="gBtn">Activar</button></div>
    <div id="zoneList"></div>
@@ -305,10 +318,8 @@ const ZONES=[
  {id:"lag",name:"Lagos de Covadonga",lat:43.2717,lng:-4.9869,r:1500,ico:"🏔️",xp:150,msg:"Foto con el lago y los Picos."}
 ];
 const DAYKEYS=["lun","mar","mie"],DAYDATE={lun:"2026-10-05",mar:"2026-10-06",mie:"2026-10-07"},DAYN={lun:"Lunes",mar:"Martes",mie:"Miércoles"};
-const MEALS=[["des","Desayuno","☕","photo",40,"Foto del desayuno"],["com","Comida","🍽️","photo",40,"Foto de la comida"],["cen","Cena","🍷","photo",40,"Foto de la cena"],["atardecer","Atardecer","🌅","photo",60,"Foto del atardecer"],["especial","Sitio especial","🎬","video",80,"Vídeo de un sitio muy especial"]];
 const MISSIONS=[];
 ZONES.forEach(z=>MISSIONS.push({id:"llegada-"+z.id,kind:"zone",zone:z.id,title:"Conquistar "+z.name,xp:z.xp}));
-DAYKEYS.forEach(d=>MEALS.forEach(([k,n,ic,kd,xp,hint])=>MISSIONS.push({id:k+"-"+d,kind:"meal",vk:kd,day:d,title:n+" del "+DAYN[d].toLowerCase(),short:n,ico:ic,xp,hint})));
 const MID=Object.fromEntries(MISSIONS.map(m=>[m.id,m]));
 const TITLES=["Novato","Aprendiz","Rastreador","Explorador","Cazador","Veterano","Élite","Maestro","Leyenda","Mito de los Picos"];
 const PASSICO=["🎖️","🧭","🕶️","🔥","🎬","💎","⚡","🏆","🌟","👑"];
@@ -319,28 +330,31 @@ const rarity=xp=>xp>=140?["leg","Legendaria"]:xp>=100?["epi","Épica"]:xp>=60?["
 const madH=ts=>+new Date(ts).toLocaleString("en-GB",{timeZone:"Europe/Madrid",hour:"2-digit",hour12:false});
 const madDate=ts=>new Date(ts).toLocaleDateString("sv-SE",{timeZone:"Europe/Madrid"});
 const TEST=/^(preview--|localhost|127\.)/.test(location.hostname)||/deploy-preview/.test(location.hostname);
-function todayKey(){const d=madDate(Date.now());if(d<=DAYDATE.lun)return "lun";if(d>=DAYDATE.mie)return "mie";return "mar"}
-function dayState(k){if(TEST)return "open";const d=madDate(Date.now());return d===DAYDATE[k]?"open":d<DAYDATE[k]?"soon":"past"}
+let simDay=TEST?LS.get("simDay",null):null; // solo en pruebas: simular qué día es
+const nowDate=()=>simDay?DAYDATE[simDay]:madDate(Date.now());
+function todayKey(){const d=nowDate();if(d<=DAYDATE.lun)return "lun";if(d>=DAYDATE.mie)return "mie";return "mar"}
+function dayState(k){const d=nowDate();return d===DAYDATE[k]?"open":d<DAYDATE[k]?"soon":"past"}
 
 /* ---------- Puntuación y logros ---------- */
 const secOf=p=>(p&&p.secret||[]).filter(m=>!m.hidden);
+const dailyOf=p=>Object.values((p&&p.daily)||{}).flat();
 function entries(pk){ // misiones completadas de un jugador
  const p=state.players[pk]||{done:{}},out=[];
  Object.entries(p.done||{}).forEach(([k,v])=>{
-  const m=MID[k]||secOf(p).find(s=>s.id===k);if(!m)return;
-  out.push({p:pk,k,ts:v.ts,photo:v.photo,m,secret:!MID[k],xp:m.xp});
+  const dm=dailyOf(p).find(s=>s.id===k);const m=MID[k]||secOf(p).find(s=>s.id===k)||(dm&&{...dm,kind:"daily",title:dm.short});if(!m)return;
+  out.push({p:pk,k,ts:v.ts,photo:v.photo,m,secret:!MID[k]&&!dm,xp:m.xp});
  });
  return out.sort((a,b)=>a.ts-b.ts);
 }
-const isFood=x=>x.m.kind==="meal"&&/^(des|com|cen)-/.test(x.k);
+const isFood=x=>x.m.kind==="daily"&&x.m.food;
 const ACH=[
  {id:"first",e:"🩸",n:"Primera sangre",d:"Completa tu primera misión",t:E=>E.length>=1},
  {id:"zone2",e:"🧭",n:"Explorador",d:"Conquista 2 zonas",t:E=>E.filter(x=>x.m.kind==="zone").length>=2},
  {id:"zone4",e:"🗺️",n:"Dueño del mapa",d:"Conquista las 4 zonas",t:E=>E.filter(x=>x.m.kind==="zone").length>=4},
  {id:"food5",e:"🍖",n:"Gourmet",d:"5 fotos de comidas",t:E=>E.filter(isFood).length>=5},
  {id:"food9",e:"👨‍🍳",n:"Crítico gastronómico",d:"Las 9 comidas del viaje",t:E=>E.filter(isFood).length>=9},
- {id:"sun",e:"🌅",n:"Cazador de atardeceres",d:"2 fotos de atardecer",t:E=>E.filter(x=>x.k.startsWith("atardecer-")).length>=2},
- {id:"spot",e:"🎞️",n:"Rincón secreto",d:"2 vídeos de sitios especiales",t:E=>E.filter(x=>x.k.startsWith("especial-")).length>=2},
+ {id:"sun",e:"🌅",n:"Cazador de atardeceres",d:"2 fotos de atardecer",t:E=>E.filter(x=>x.k.startsWith("d-atardecer-")).length>=2},
+ {id:"spot",e:"🎞️",n:"Rincón secreto",d:"2 vídeos de sitios especiales",t:E=>E.filter(x=>x.k.startsWith("d-especial-")).length>=2},
  {id:"spy3",e:"🕵️",n:"Espía",d:"3 misiones principales",t:E=>E.filter(x=>x.secret).length>=3},
  {id:"spy6",e:"🥷",n:"Maestro del sigilo",d:"6 misiones principales",t:E=>E.filter(x=>x.secret).length>=6},
  {id:"video",e:"🎬",n:"Director",d:"Sube tu primer vídeo",t:E=>E.some(x=>/\.(mp4|webm)$/.test(x.photo||""))},
@@ -428,6 +442,13 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
  SFX.tap();scrollTo(0,0);
 });
 
+/* ================= Secundarias: pestañas deslizables ================= */
+let curDay=null;
+function scrollPane(d,smooth){const sw=$("swipe"),i=DAYKEYS.indexOf(d);if(!sw.clientWidth)return;sw.scrollTo({left:i*sw.clientWidth,behavior:smooth?"smooth":"instant"})}
+document.addEventListener("click",e=>{const t=e.target.closest("#dayTabs button");if(!t)return;curDay=t.dataset.d;document.querySelectorAll("#dayTabs button").forEach(x=>x.classList.toggle("on",x===t));scrollPane(curDay,true)});
+let swT=null;
+document.addEventListener("scroll",e=>{if(e.target!==$("swipe"))return;clearTimeout(swT);swT=setTimeout(()=>{const sw=$("swipe"),i=Math.round(sw.scrollLeft/sw.clientWidth),d=DAYKEYS[Math.max(0,Math.min(2,i))];if(d!==curDay){curDay=d;document.querySelectorAll("#dayTabs button").forEach(x=>x.classList.toggle("on",x.dataset.d===d))}},90)},true);
+
 /* ================= Render ================= */
 function render(){
  if(!me)return;
@@ -455,15 +476,23 @@ function render(){
  $("secList").innerHTML=h;
  const nb=$("nb");nb.hidden=!act.length;nb.textContent=act.length;
 
- // Secundarias
+ // Secundarias (al azar, distintas para cada jugador), una pestaña deslizable por día
  const tk=todayKey();
- $("dayLbl").textContent=TEST?"modo prueba":DAYN[tk];
- const days=TEST?DAYKEYS:[tk];
- $("dailyList").innerHTML=days.map(d=>MEALS.map(([k,n,ic])=>{
-  const id=k+"-"+d,m=MID[id],dn=mine.done[id],st=dayState(d);
-  const left=dn&&dn.photo?`<img class="th" data-k="${dn.photo}" data-c="${NAMES[me]} · ${m.title}" src="${photoUrl(dn.photo)}" alt="">`:`<div class="ic">${ic}</div>`;
-  const btn=dn?`<button class="chip go">Repetir</button>`:st==="open"?`<button class="btn sm go">${m.vk==="video"?"Grabar":"Foto"}</button>`:`<span class="chip">${st==="soon"?"Pronto":"Expirada"}</span>`;
-  return `<div class="q ${dn?"done":""} ${st!=="open"&&!dn?"lock":""}" data-id="${id}">${left}<div class="tx"><b>${m.title}</b><small>${dn?"✓ Completada":m.hint} <span class="xp">+${m.xp} XP</span></small></div>${btn}</div>`}).join("")).join("");
+ if(!curDay)curDay=tk;
+ $("dayLbl").textContent="Hoy: "+DAYN[tk];
+ $("dayTabs").innerHTML=DAYKEYS.map(d=>{const st=dayState(d),list=(mine.daily||{})[d]||[],nd=list.filter(m=>mine.done[m.id]).length;
+  return `<button class="${d===curDay?"on":""} ${st==="soon"?"lk":""}" data-d="${d}">${st==="soon"?"🔒 ":""}${DAYN[d]} ${DAYDATE[d].slice(-1)}<small>${st==="soon"?"Bloqueado":list.length?nd+"/"+list.length:"—"}</small></button>`}).join("");
+ $("swipe").innerHTML=DAYKEYS.map(d=>{
+  const st=dayState(d),list=(mine.daily||{})[d]||[];
+  if(st==="soon"||!list.length)return `<div class="pane lk" data-d="${d}">`+[0,1,2,3,4].map(()=>`<div class="q lock"><div class="ic">🔒</div><div class="tx"><b>???</b><small>${st==="soon"?"Se desbloquea el "+DAYN[d].toLowerCase()+" "+DAYDATE[d].slice(-1):"Aún no repartidas"}</small></div></div>`).join("")+`</div>`;
+  return `<div class="pane" data-d="${d}">`+list.map(m=>{
+   const dn=mine.done[m.id],vid=m.kind==="video";
+   const left=dn&&dn.photo?`<img class="th" data-k="${dn.photo}" data-c="${NAMES[me]} · ${m.short}" src="${photoUrl(dn.photo)}" alt="">`:`<div class="ic">${vid?"🎬":m.food?"🍽️":"📷"}</div>`;
+   const btn=dn?`<button class="chip go">Repetir</button>`:st==="open"?`<button class="btn sm go">${vid?"Grabar":"Foto"}</button>`:`<span class="chip">Expirada</span>`;
+   return `<div class="q ${dn?"done":""} ${st!=="open"&&!dn?"lock":""}" data-id="${m.id}">${left}<div class="tx"><b>${m.t.replace(/\{r\}/g,"tu rival")}</b><small>${dn?"✓ Completada":vid?"Vídeo · máx. 15 s":"Foto"} <span class="xp">+${m.xp} XP</span></small></div>${btn}</div>`}).join("")+`</div>`}).join("");
+ scrollPane(curDay,false);
+ const sb=$("simBox");
+ if(TEST){sb.hidden=false;sb.innerHTML=`<p class="mute" style="font-size:12px;margin:8px 2px 0">🧪 Prueba: día simulado <button class="chip" id="simBtn">${simDay?DAYN[simDay]:"hoy real"} ↻</button></p>`;$("simBtn").onclick=()=>{const o=[null,"lun","mar","mie"];simDay=o[(o.indexOf(simDay)+1)%4];LS.set("simDay",simDay);curDay=null;render()}}
 
  // Zonas
  $("zoneList").innerHTML=ZONES.map((z,i)=>{
@@ -485,7 +514,7 @@ function renderDuel(){
  $("vs").innerHTML=side("mario",A)+side("veronica",B)+`<div class="mid">VS</div>`;
  $("tugA").style.width=(tot?A.xp/tot*100:50)+"%";$("tugB").style.width=(tot?B.xp/tot*100:50)+"%";
  $("lead").innerHTML=!tot?"Nadie ha puntuado. El primero que mueva ficha manda.":lead?`<b style="color:var(--${lead==="mario"?"mario":"vero"})">${NAMES[lead]}</b> gana por <b>${Math.abs(A.xp-B.xp)} XP</b>`:"<b>Empate técnico</b>. Desempatad ya.";
- const rows=[["Misiones",E=>E.length],["Principales",E=>E.filter(x=>x.secret).length],["Zonas",E=>E.filter(x=>x.m.kind==="zone").length],["Secundarias",E=>E.filter(x=>x.m.kind==="meal").length],["Vídeos",E=>E.filter(x=>isVid(x.photo)).length]];
+ const rows=[["Misiones",E=>E.length],["Principales",E=>E.filter(x=>x.secret).length],["Zonas",E=>E.filter(x=>x.m.kind==="zone").length],["Secundarias",E=>E.filter(x=>x.m.kind==="daily").length],["Vídeos",E=>E.filter(x=>isVid(x.photo)).length]];
  let st=rows.map(([k,f])=>{const a=f(A.E),b=f(B.E);return `<div class="l ${a>b?"w":""}">${a}</div><div class="k">${k}</div><div class="r ${b>a?"w":""}">${b}</div>`}).join("");
  st+=`<div class="l ${A.got.length>B.got.length?"w":""}">${A.got.length}</div><div class="k">Logros</div><div class="r ${B.got.length>A.got.length?"w":""}">${B.got.length}</div>`;
  $("stats").innerHTML=st;
@@ -545,8 +574,8 @@ const closeV=()=>{$("viewer").hidden=true;$("vBox").innerHTML=""};
 $("vClose").onclick=closeV;$("viewer").onclick=e=>{if(e.target===$("viewer"))closeV()};
 
 /* ================= Cámara, vídeo y subida ================= */
-const missionInfo=id=>MID[id]||secOf(state.players[me]).find(m=>m.id===id)||{};
-function openCam(id){camMission=id;const m=missionInfo(id);if(m.kind==="video"||m.vk==="video"){openRecorder(id);return}$("cam").value="";$("cam").click()}
+const missionInfo=id=>MID[id]||secOf(state.players[me]).find(m=>m.id===id)||dailyOf(state.players[me]).find(m=>m.id===id)||{};
+function openCam(id){camMission=id;const m=missionInfo(id);if(m.kind==="video"){openRecorder(id);return}$("cam").value="";$("cam").click()}
 $("cam").addEventListener("change",async()=>{
  const f=$("cam").files[0];if(!f||!camMission)return;const id=camMission;camMission=null;
  try{toast("Subiendo…",15000);const blob=await shrink(f,missionInfo(id).sticker);await upload(id,blob,"image/jpeg")}catch(e){upFail(e)}

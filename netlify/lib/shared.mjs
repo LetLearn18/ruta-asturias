@@ -1,5 +1,5 @@
 import { getStore, getDeployStore } from "@netlify/blobs";
-import { POOL, FIRST_ID } from "./pool.mjs";
+import { POOL, FIRST_ID, DAILY } from "./pool.mjs";
 
 export const PLAYERS = ["mario", "veronica"];
 export const MISSION_RE = /^[a-z0-9-]{3,40}$/;
@@ -76,12 +76,38 @@ export function nextUnlock(pl) {
   return c.length ? Math.max(now, Math.min(...c)) : null;
 }
 
+// ---- Misiones secundarias: 5 al azar por jugador y día ----
+export const DAYKEYS = ["lun", "mar", "mie"];
+const DAYSTART = { lun: "2026-10-05T00:00:00+02:00", mar: "2026-10-06T00:00:00+02:00", mie: "2026-10-07T00:00:00+02:00" };
+export function assignDaily(pl) {
+  pl.daily ||= {};
+  let changed = false;
+  const prod = Netlify.context?.deploy?.context === "production";
+  for (const d of DAYKEYS) {
+    if (pl.daily[d]) continue;
+    if (prod && Date.now() < new Date(DAYSTART[d]).getTime()) continue; // en producción, cada día se abre a su hora
+    if (prod && Date.now() > END) continue;
+    const used = new Set(Object.values(pl.daily).flat().map((m) => m.tpl));
+    const fresh = (m) => !used.has(m.id);
+    const shuffle = (a) => a.map((x) => [Math.random(), x]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+    const food = shuffle(DAILY.filter((m) => m.food && fresh(m)))[0] || shuffle(DAILY.filter((m) => m.food))[0];
+    const rest = shuffle(DAILY.filter((m) => !m.food && fresh(m)));
+    const more = rest.length >= 4 ? rest.slice(0, 4) : [...rest, ...shuffle(DAILY.filter((m) => !m.food && !rest.includes(m)))].slice(0, 4);
+    pl.daily[d] = shuffle([food, ...more]).map((m) => ({ ...m, tpl: m.id, id: m.id + "-" + d, day: d }));
+    changed = true;
+  }
+  return changed;
+}
+
 // Lo que ve quien pregunta: lo suyo completo; del rival solo lo ya cumplido.
 export function view(pl, mine) {
-  if (mine) return { done: pl.done, secret: pl.secret, next: nextUnlock(pl) };
+  const daily = {};
+  for (const d of Object.keys(pl.daily || {})) daily[d] = mine ? pl.daily[d] : pl.daily[d].filter((m) => pl.done[m.id]);
+  if (mine) return { done: pl.done, secret: pl.secret, daily, next: nextUnlock(pl) };
   return {
     done: pl.done,
     secret: pl.secret.map((s) => (pl.done[s.id] ? s : { hidden: true })),
+    daily,
   };
 }
 
@@ -122,9 +148,11 @@ export async function advanceAll(skip) {
   const out = {};
   for (const p of PLAYERS) {
     const pl = await readPlayer(p);
-    if (tick(pl)) {
+    const fresh = tick(pl);
+    const dd = assignDaily(pl);
+    if (fresh || dd) {
       await writePlayer(p, pl);
-      if (p !== skip) await push(p, "🕶️ Misión secreta", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
+      if (fresh && p !== skip) await push(p, "🕶️ Misión principal", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
     }
     out[p] = pl;
   }
