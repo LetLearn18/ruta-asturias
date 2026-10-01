@@ -1,5 +1,5 @@
 import { getStore, getDeployStore } from "@netlify/blobs";
-import { POOL } from "./pool.mjs";
+import { POOL, FIRST_ID } from "./pool.mjs";
 
 export const PLAYERS = ["mario", "veronica"];
 export const MISSION_RE = /^[a-z0-9-]{3,40}$/;
@@ -34,9 +34,9 @@ export async function writePlayer(name, data) {
 // ---- Misiones secretas: se desbloquean solas durante el viaje ----
 export const START = new Date("2026-10-05T06:00:00+02:00").getTime();
 export const END = new Date("2026-10-08T03:00:00+02:00").getTime();
-export const UNLOCK_EVERY = 2 * 3600e3; // una nueva cada 2 h aunque no hayas acabado la anterior
-export const COOLDOWN = 5 * 60e3;       // al completar la última, otra a los 5 min
-export const MAX_ACTIVE = 3;
+export const UNLOCK_EVERY = 2 * 3600e3; // sin uso con una sola activa
+export const COOLDOWN = 15 * 60e3;      // al completar la principal, la siguiente llega a los 15 min
+export const MAX_ACTIVE = 1;            // una misión principal cada vez
 
 // Fuera de producción (preview) siempre activo, para poder probar.
 export function inWindow() {
@@ -58,7 +58,8 @@ export function tick(pl) {
   if (!due) return false;
   const used = new Set(pl.secret.map((s) => s.id));
   const free = POOL.filter((m) => !used.has(m.id));
-  pl.secret.push({ ...free[Math.floor(Math.random() * free.length)], at: now });
+  const first = pl.secret.length === 0 && free.find((m) => m.id === FIRST_ID);
+  pl.secret.push({ ...(first || free[Math.floor(Math.random() * free.length)]), at: now });
   return true;
 }
 
