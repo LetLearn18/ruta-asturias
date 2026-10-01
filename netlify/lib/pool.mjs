@@ -1,11 +1,12 @@
 // Misiones principales (secretas, de una en una). {r} = el rival.
 // Para añadir una: id único que empiece por "s-" (a-z, 0-9, guiones, máx. 40), kind "photo" o "video", xp, short y t.
 // sticker: emoji que la app pega sobre la foto (opcional). La primera de cada jugador siempre es FIRST_ID.
-export const FIRST_ID = "s-durmiendo";
-// win: [[inicio, fin], ...]. Misión de evento: solo se reparte si en ese momento estás en esa franja
+export const FIRST_ID = null; // si pones un id, será la primera principal de cada jugador
+// win: [[inicio, fin], ...]. Misión de evento (durmiendo: noches del lunes y martes; tren: ida y vuelta): solo se reparte si en ese momento estás en esa franja
 // (extra, no cuenta como la principal en curso) y caduca al terminar si no se cumple.
 export const POOL = [
-  { id: "s-durmiendo", kind: "photo", xp: 200, short: "Rival dormido", t: "Hazle una foto a {r} durmiendo." },
+  { id: "s-durmiendo-lun", kind: "photo", xp: 200, short: "Rival dormido (lunes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-05T23:00:00+02:00", "2026-10-06T03:00:00+02:00"]] },
+  { id: "s-durmiendo-mar", kind: "photo", xp: 200, short: "Rival dormido (martes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-06T23:00:00+02:00", "2026-10-07T03:00:00+02:00"]] },
   { id: "s-muneco", kind: "photo", xp: 180, short: "Rival con muñeco dormilón", t: "Fotografía a {r} con los ojos cerrados. La app le pega un muñeco dormilón.", sticker: "😴" },
   { id: "s-lagos", kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
   { id: "s-andando", kind: "video", xp: 160, short: "Rival andando", t: "Graba a {r} andando sin que se dé cuenta." },

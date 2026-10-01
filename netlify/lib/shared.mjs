@@ -64,6 +64,8 @@ export function tick(pl) {
   // 2) eventos: se reparten solo dentro de su franja
   for (const m of POOL.filter(isEvent)) {
     if (pl.secret.some((x) => x.id === m.id)) continue;
+    // En producción solo dentro de su franja. En preview, de uno en uno para poder probarlos.
+    if (!prod && pl.secret.some((x) => x.event && !pl.done[x.id])) continue;
     const w = prod ? m.win.find(([a, b]) => now >= new Date(a).getTime() && now < new Date(b).getTime()) : [0, new Date(now + 3600e3).toISOString()];
     if (!w) continue;
     pl.secret.push({ ...m, at: now, until: new Date(w[1]).getTime(), event: true });
