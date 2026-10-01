@@ -35,7 +35,7 @@ export async function writePlayer(name, data) {
 export const START = new Date("2026-10-05T06:00:00+02:00").getTime();
 export const END = new Date("2026-10-08T03:00:00+02:00").getTime();
 export const UNLOCK_EVERY = 2 * 3600e3; // sin uso con una sola activa
-export const COOLDOWN = 2 * 3600e3;     // al completar la principal, la siguiente llega 2 h después
+export const COOLDOWN = 4 * 3600e3;     // al completar la principal, la siguiente llega 4 h después
 export const MAX_ACTIVE = 1;            // una misión principal cada vez
 
 // Fuera de producción (preview) siempre activo, para poder probar.
