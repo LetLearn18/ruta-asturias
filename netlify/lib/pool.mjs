@@ -14,6 +14,9 @@ export const POOL = [
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },
   { id: "s-sombras-juntas", kind: "photo", xp: 130, short: "Sombras juntas", t: "Foto de vuestras dos sombras juntas." },
   { id: "s-historico", kind: "photo", xp: 140, short: "Algo histórico", t: "Foto de algo histórico de la zona donde estéis." },
+  { id: "s-puente-rival", kind: "photo", xp: 120, short: "Cruzando el puente", t: "Foto de {r} cruzando el Puente Romano de Cangas." },
+  { id: "s-basilica", kind: "photo", xp: 130, short: "Ante la basílica", t: "Foto de {r} mirando la basílica de Covadonga." },
+  { id: "s-estatua", kind: "photo", xp: 150, short: "Imitando una estatua", t: "Foto de {r} imitando la pose de una estatua de Oviedo." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },
   { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
 ];
