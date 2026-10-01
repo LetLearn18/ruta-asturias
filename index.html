@@ -86,6 +86,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .gal i{position:absolute;left:5px;bottom:5px;width:18px;height:18px;border-radius:50%;border:2px solid var(--ink)}
 .gal i.mario{background:var(--mario)}.gal i.veronica{background:var(--vero)}
 .viewer{position:fixed;inset:0;z-index:100;background:#050b14ee;display:grid;grid-template-rows:1fr auto;padding:env(safe-area-inset-top) 12px calc(12px + env(safe-area-inset-bottom))}
+.vbox{display:grid;place-items:center;min-height:0;text-align:center;color:var(--mute)}
+.viewer video{max-width:100%;max-height:78dvh;border-radius:14px}
 .viewer img{max-width:100%;max-height:78dvh;margin:auto;border-radius:14px}
 .viewer .cap{text-align:center;color:var(--mute);padding:10px}
 /* paradas */
@@ -110,6 +112,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pinm{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--cider);border:3px solid var(--ink);display:grid;place-items:center}
 .pinm span{transform:rotate(45deg);font:800 13px var(--f);color:var(--ink)}
 .pinm.hit{background:var(--ok)}
+.ms.sec{border-color:var(--cider);background:linear-gradient(135deg,#2a2a1f,var(--ink2))}
+.vt{width:100%;height:100%;display:grid;place-items:center;font-size:28px;background:var(--ink3)}
+.rec{position:fixed;inset:0;z-index:120;background:#000;display:grid;grid-template-rows:1fr auto}
+.rec video{width:100%;height:100%;object-fit:cover;min-height:0}
+.rec .ctl{display:flex;gap:14px;align-items:center;justify-content:center;padding:16px 16px calc(18px + env(safe-area-inset-bottom));background:#050b14}
+.rec .big{width:70px;height:70px;border-radius:50%;border:4px solid var(--paper);background:#e5484d}
+.rec .big.on{border-radius:18px;width:62px;height:62px}
+.rec .tm{position:absolute;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#000a;padding:5px 12px;border-radius:99px;font-weight:600}
 /* nav */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#0e1a2bf2;backdrop-filter:blur(14px);border-top:1.5px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:4px}
 nav button{flex:1;max-width:120px;background:none;border:0;border-radius:14px;padding:8px 2px;color:var(--mute);display:grid;gap:2px;justify-items:center;font-size:12px}
@@ -185,7 +195,7 @@ nav button.on{color:var(--ink);background:var(--cider)}
  <button data-t="map"><span>🗺️</span>Mapa</button>
 </nav>
 <input type="file" id="cam" accept="image/*" capture="environment" hidden>
-<div class="viewer" id="viewer" hidden><img id="vImg" alt=""><div class="cap"><div id="vCap"></div><button class="btn ghost" id="vClose" style="margin-top:8px">Cerrar</button></div></div>
+<div class="viewer" id="viewer" hidden><div id="vBox" class="vbox"></div><div class="cap"><div id="vCap"></div><button class="btn ghost" id="vClose" style="margin-top:8px">Cerrar</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -206,10 +216,12 @@ const MISSIONS=[];
 STOPS.forEach((s,i)=>MISSIONS.push({id:"llegada-"+s.id,kind:"stop",stop:i,title:"Llegar a "+s.name,hint:s.msg,ico:"📍",xp:100,day:"lun"}));
 Object.keys(DAYN).forEach(d=>MEALS.forEach(([k,n,ic])=>MISSIONS.push({id:k+"-"+d,kind:"meal",title:n,hint:"Foto de vuestro plato o mesa",ico:ic,xp:40,day:d})));
 const MID=Object.fromEntries(MISSIONS.map(m=>[m.id,m]));
-const RANKS=[[0,"Curioso"],[120,"Caminante"],[300,"Explorador"],[520,"Cartógrafo"],[760,"Gran Expedicionario"]];
-const MAXXP=MISSIONS.reduce((a,m)=>a+m.xp,0);
-const rankOf=x=>RANKS.filter(r=>x>=r[0]).pop()[1];
-const xpOf=p=>Object.keys((p&&p.done)||{}).reduce((a,k)=>a+(MID[k]?MID[k].xp:0),0);
+const RANKS=[[0,"Curioso"],[150,"Caminante"],[350,"Explorador"],[650,"Cartógrafo"],[1000,"Cazador de Picos"],[1500,"Gran Expedicionario"],[2200,"Leyenda de los Picos"]];
+const rankIdx=x=>RANKS.filter(r=>x>=r[0]).length-1;
+const rankOf=x=>RANKS[rankIdx(x)][1];
+const xpOf=p=>{if(!p)return 0;const d=p.done||{};let t=Object.keys(d).reduce((a,k)=>a+(MID[k]?MID[k].xp:0),0);(p.secret||[]).forEach(m=>{if(!m.hidden&&d[m.id])t+=m.xp});return t};
+const secOf=p=>(p&&p.secret||[]).filter(m=>!m.hidden);
+const doneSec=p=>secOf(p).filter(m=>(p.done||{})[m.id]).length;
 
 // Horario
 const DAYS=[
@@ -218,7 +230,7 @@ const DAYS=[
  {key:"mie",ev:[["09:00","Check-out","hotel","Hasta las 12:00. Preguntad por las maletas"],["12:00","Comida y compras","plan","Queso Cabrales y sidra para llevar"],["14:15","Bus ALSA Cangas → Oviedo","bus","Plan B 15:15; último seguro 16:15"],["15:50","Paseo por Oviedo","plan","Catedral, Fontán, Gascona"],["18:56","Tren Oviedo → Chamartín","tren","Avlo 04190 · coche 3 · plazas 7A y 7B · llegada 22:25"]]}
 ];
 
-let me=LS.get("player",null), pin=LS.get("pin",""), state={players:{mario:{done:{}},veronica:{done:{}}},pinRequired:false};
+let me=LS.get("player",null), pin=LS.get("pin",""), state={players:{mario:{done:{},secret:[]},veronica:{done:{},secret:[]}},pinRequired:false}, seenSec=null;
 let pos=null, inside=-1, watchId=null, camMission=null, map=null, markers=[], me_m=null, dismissed={};
 const photoUrl=k=>"/api/photo?key="+encodeURIComponent(k);
 const hdr=()=>pin?{"x-trip-pin":pin}:{};
@@ -231,7 +243,33 @@ async function api(path,opt={}){
  return j;
 }
 async function refresh(){
- try{const j=await api("/api/state");state=j;render()}catch(e){}
+ try{const j=await api("/api/state?me="+me);state=j;checkNew();render()}catch(e){}
+}
+
+const isVid=k=>/\.(mp4|webm)$/.test(k||"");
+function nextRank(x){const i=rankIdx(x);return i<RANKS.length-1?` · ${RANKS[i+1][0]-x} para ${RANKS[i+1][1]}`:""}
+function rankPct(x){const i=rankIdx(x);if(i>=RANKS.length-1)return 100;return (x-RANKS[i][0])/(RANKS[i+1][0]-RANKS[i][0])*100}
+function nextTxt(t){const d=new Date(t),same=d.toDateString()===new Date().toDateString();return (same?"hoy":d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric"}))+" sobre las "+d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})}
+function checkNew(){
+ const mine=state.players[me];if(!mine)return;
+ const ids=secOf(mine).map(m=>m.id);
+ if(seenSec===null){seenSec=LS.get("seenSec_"+me,null);if(seenSec===null)seenSec=ids.length?[]:[]}
+ const fresh=ids.filter(i=>!seenSec.includes(i));
+ if(fresh.length){
+  seenSec=ids;LS.set("seenSec_"+me,ids);
+  const m=secOf(mine).find(x=>x.id===fresh[fresh.length-1]);
+  if(LS.get("sawAny_"+me,false)||fresh.length===1){
+   toast("🕶️ Nueva misión secreta");notifyNew(m);
+  }
+  LS.set("sawAny_"+me,true);
+ }
+}
+async function notifyNew(m){
+ try{if("Notification" in window&&Notification.permission==="granted"){
+  const reg=await navigator.serviceWorker.getRegistration();
+  const o={body:"Tienes una misión secreta nueva. Ábrela sin que te vea tu rival.",icon:"icon-192.png",tag:"sec-"+m.id,data:{url:"./"}};
+  if(reg)reg.showNotification("🕶️ Misión secreta",o);else new Notification("🕶️ Misión secreta",o);
+ }}catch(e){}
 }
 
 /* ---------- Login ---------- */
@@ -269,14 +307,20 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
 /* ---------- Render ---------- */
 function render(){
  if(!me)return;
- const mine=state.players[me]||{done:{}};
+ const mine=state.players[me]||{done:{},secret:[]};const rival=me==="mario"?"veronica":"mario";
  $("meAv").className="av "+me;$("meAv").textContent=NAMES[me][0];
  $("meName").textContent=NAMES[me];$("meRank").textContent=rankOf(xpOf(mine));
  const nDone=Object.keys(mine.done).filter(k=>MID[k]).length;
+ const act=secOf(mine).filter(m=>!mine.done[m.id]);
  $("myCard").className="card "+me;
- $("myCard").innerHTML=`<div class="kick">Tu progreso</div><h2>${nDone} de ${MISSIONS.length} misiones</h2><p class="sub">${xpOf(mine)} de ${MAXXP} puntos de expedición</p><div class="bar"><i style="width:${xpOf(mine)/MAXXP*100}%"></i></div>`;
+ $("myCard").innerHTML=`<div class="kick">Tu progreso</div><h2>${xpOf(mine)} puntos</h2><p class="sub">${nDone} de ${MISSIONS.length} misiones del viaje · ${doneSec(mine)} secretas${nextRank(xpOf(mine))}</p><div class="bar"><i style="width:${rankPct(xpOf(mine))}%"></i></div>`;
  // misiones
- let html="";
+ let html=`<div class="day"><h3>Misiones secretas</h3><span>${NAMES[rival]} no ve estas</span></div>`;
+ act.forEach(m=>{html+=`<div class="ms sec" data-id="${m.id}"><div class="ic">${m.kind==="video"?"🎥":"🕶️"}</div><div class="tx"><b>${m.t.replace(/\{r\}/g,"tu rival")}</b><small>${m.kind==="video"?"Vídeo":"Foto"} · nueva a las ${new Date(m.at).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})}</small> <span class="xp">+${m.xp}</span></div><button class="go">${m.kind==="video"?"🎥 Grabar":"📷 Foto"}</button></div>`});
+ if(!act.length)html+=`<div class="ms lock"><div class="ic">🔒</div><div class="tx"><b>${mine.secret&&mine.secret.length?"Todas cumplidas por ahora":"Aún no hay misión secreta"}</b></div></div>`;
+ if(mine.next)html+=`<p class="sub" style="margin:4px 4px 0">Próxima misión secreta: ${nextTxt(mine.next)}</p>`;
+ const dnS=secOf(mine).filter(m=>mine.done[m.id]);
+ if(dnS.length)html+=`<p class="sub" style="margin:10px 4px 0">Cumplidas: ${dnS.map(m=>m.short).join(" · ")}</p>`;
  ["lun","mar","mie"].forEach(d=>{
   html+=`<div class="day"><h3>${DAYN[d]}</h3><span>${d==="lun"?"Ida y primera tarde":d==="mar"?"Lagos y Covadonga":"Vuelta por Oviedo"}</span></div>`;
   MISSIONS.filter(m=>m.day===d||(d==="lun"&&m.kind==="stop")).forEach(m=>{
@@ -291,18 +335,19 @@ function render(){
 }
 function renderDash(){
  const P=state.players;
- $("duo").innerHTML=["mario","veronica"].map(p=>{const x=xpOf(P[p]),n=Object.keys(P[p].done).filter(k=>MID[k]).length;
-  return `<div class="pl ${p}"><b>${NAMES[p]}</b><span class="rank" style="color:var(--${p==="mario"?"mario":"vero"})">${rankOf(x)}</span><div class="bar"><i style="width:${x/MAXXP*100}%"></i></div><span>${n}/${MISSIONS.length} misiones · ${x} pts</span></div>`}).join("");
- const total=["mario","veronica"].reduce((a,p)=>a+Object.keys(P[p].done).filter(k=>MID[k]).length,0);
- $("cuaSub").textContent=`${total} de ${MISSIONS.length*2} misiones entre los dos.`;
+ const xs={mario:xpOf(P.mario),veronica:xpOf(P.veronica)},mx=Math.max(100,xs.mario,xs.veronica);
+ $("duo").innerHTML=["mario","veronica"].map(p=>{const x=xs[p],n=Object.keys(P[p].done).filter(k=>MID[k]).length;
+  return `<div class="pl ${p}"><b>${NAMES[p]}${x>0&&x===mx?" 👑":""}</b><span class="rank" style="color:var(--${p==="mario"?"mario":"vero"})">${rankOf(x)}</span><div class="bar"><i style="width:${x/mx*100}%"></i></div><span>${x} pts · ${n} viaje · ${doneSec(P[p])} secretas</span></div>`}).join("");
+ const df=xs.mario-xs.veronica;
+ $("cuaSub").textContent=df===0?(xs.mario?"Empate total. Alguien tiene que mover ficha.":"Competición abierta. Nadie ha puntuado aún."):`Va ganando ${NAMES[df>0?"mario":"veronica"]} por ${Math.abs(df)} puntos.`;
  $("stopsList").innerHTML=STOPS.map((s,i)=>{
   const who=["mario","veronica"].filter(p=>P[p].done["llegada-"+s.id]);
   return `<div class="stop ${who.length?"hit":""}"><div class="n">${who.length?"✓":i+1}</div><div class="tx"><b>${s.name}<span class="who2">${who.map(p=>`<i class="${p}"></i>`).join("")}</span></b><small>${s.sub}</small></div></div>`}).join("");
  const ph=[];
- ["mario","veronica"].forEach(p=>Object.entries(P[p].done).forEach(([k,v])=>{if(v.photo&&MID[k])ph.push({p,k,...v})}));
+ ["mario","veronica"].forEach(p=>Object.entries(P[p].done).forEach(([k,v])=>{if(!v.photo)return;const sm=secOf(P[p]).find(m=>m.id===k);if(MID[k])ph.push({p,k,cap:MID[k].title,...v});else if(sm)ph.push({p,k,cap:sm.short+" (secreta)",...v})}));
  ph.sort((a,b)=>b.ts-a.ts);
  $("galSub").textContent=ph.length?`${ph.length} foto${ph.length>1?"s":""}. Toca para verlas grandes.`:"Aún no hay fotos. La primera, en Chamartín.";
- $("gal").innerHTML=ph.map(f=>`<button data-k="${f.photo}" data-c="${NAMES[f.p]} · ${MID[f.k].title}"><img loading="lazy" src="${photoUrl(f.photo)}" alt=""><i class="${f.p}"></i></button>`).join("");
+ $("gal").innerHTML=ph.map(f=>`<button data-k="${f.photo}" data-c="${NAMES[f.p]} · ${f.cap}">${isVid(f.photo)?`<div class="vt">▶</div>`:`<img loading="lazy" src="${photoUrl(f.photo)}" alt="">`}<i class="${f.p}"></i></button>`).join("");
 }
 function renderSched(){
  $("sched").innerHTML=DAYS.map(d=>`<div class="card"><h2>${DAYN[d.key]}</h2>${d.ev.map(e=>`<div class="ev" data-s="${DATE[d.key]}T${e[0]}"><time>${e[0]}</time><div><b>${e[1]}<span class="tag">${e[2]}</span></b><small>${e[3]}</small></div></div>`).join("")}</div>`).join("");
@@ -315,35 +360,78 @@ function renderSched(){
 document.addEventListener("click",e=>{
  const t=e.target.closest("[data-k]");
  if(t&&(t.closest(".gal")||t.classList.contains("th"))){
-  $("vImg").src=photoUrl(t.dataset.k);$("vCap").textContent=t.dataset.c||"";$("viewer").hidden=false;return;
+  openViewer(t.dataset.k,t.dataset.c||"");return;
  }
  const go=e.target.closest(".ms .go");
  if(go){openCam(go.closest(".ms").dataset.id)}
 });
-$("vClose").onclick=()=>$("viewer").hidden=true;
-$("viewer").onclick=e=>{if(e.target===$("viewer"))$("viewer").hidden=true};
+let vUrl=null;
+async function openViewer(k,cap){
+ const box=$("vBox");box.innerHTML="";$("vCap").textContent=cap;$("viewer").hidden=false;
+ if(isVid(k)){
+  box.textContent="Cargando vídeo…";
+  try{const r=await fetch(photoUrl(k));if(!r.ok)throw 0;const b=await r.blob();if($("viewer").hidden)return;if(vUrl)URL.revokeObjectURL(vUrl);vUrl=URL.createObjectURL(b);
+   const v=document.createElement("video");v.src=vUrl;v.controls=true;v.autoplay=true;v.playsInline=true;box.innerHTML="";box.appendChild(v)}catch(e){box.textContent="No se pudo cargar el vídeo"}
+ }else{const i=document.createElement("img");i.src=photoUrl(k);i.alt="";box.appendChild(i)}
+}
+const closeV=()=>{$("viewer").hidden=true;$("vBox").innerHTML=""};
+$("vClose").onclick=closeV;
+$("viewer").onclick=e=>{if(e.target===$("viewer"))closeV()};
 
 /* ---------- Cámara y subida ---------- */
-function openCam(id){camMission=id;$("cam").value="";$("cam").click()}
+const missionInfo=id=>MID[id]||secOf(state.players[me]).find(m=>m.id===id)||{};
+function openCam(id){
+ camMission=id;const m=missionInfo(id);
+ if(m.kind==="video"){openRecorder(id);return}
+ $("cam").value="";$("cam").click();
+}
 $("cam").addEventListener("change",async()=>{
  const f=$("cam").files[0];if(!f||!camMission)return;
- const id=camMission;camMission=null;
- toast("Subiendo foto…",8000);
- try{
-  const blob=await shrink(f);
-  const j=await api(`/api/photo?player=${me}&mission=${id}`,{method:"POST",headers:{"content-type":"image/jpeg"},body:blob});
-  const before=xpOf(state.players[me]);
-  state.players[me]=j.player;render();
-  document.querySelectorAll(".toast").forEach(x=>x.remove());
-  toast("¡Misión cumplida! +"+(MID[id]?MID[id].xp:0));
-  if(rankOf(xpOf(j.player))!==rankOf(before))levelUp(rankOf(xpOf(j.player)));
- }catch(e){document.querySelectorAll(".toast").forEach(x=>x.remove());toast(e.status===401?"PIN incorrecto: vuelve a entrar":"No se pudo subir: "+e.message,4000)}
+ const id=camMission;camMission=null;const m=missionInfo(id);
+ try{upStart();const blob=await shrink(f,m.sticker);await upload(id,blob,"image/jpeg")}catch(e){upFail(e)}
 });
-function shrink(file){return new Promise((res,rej)=>{
+function upStart(){toast("Subiendo…",12000)}
+function upFail(e){document.querySelectorAll(".toast").forEach(x=>x.remove());toast(e&&e.status===401?"PIN incorrecto: vuelve a entrar":"No se pudo subir: "+((e&&e.message)||"error"),4500)}
+async function upload(id,blob,type){
+ if(blob.size>5.5e6)throw new Error("Pesa demasiado ("+(blob.size/1e6).toFixed(1)+" MB)");
+ const before=xpOf(state.players[me]);
+ await api(`/api/photo?player=${me}&mission=${id}`,{method:"POST",headers:{"content-type":type},body:blob});
+ const j=await api("/api/state?me="+me);state=j;render();
+ document.querySelectorAll(".toast").forEach(x=>x.remove());
+ toast("¡Misión cumplida! +"+(missionInfo(id).xp||0));
+ const a=xpOf(state.players[me]);if(rankIdx(a)>rankIdx(before))levelUp(rankOf(a));
+}
+function shrink(file,sticker){return new Promise((res,rej)=>{
  const u=URL.createObjectURL(file),im=new Image();
- im.onload=()=>{const M=1400,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error("Foto no válida")),"image/jpeg",.8)};
+ im.onload=()=>{const M=1400,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext("2d");x.drawImage(im,0,0,c.width,c.height);
+  if(sticker){const z=Math.round(Math.min(c.width,c.height)*.28);x.font=z+"px serif";x.textBaseline="top";x.shadowColor="#000a";x.shadowBlur=z/8;x.fillText(sticker,c.width-z*1.25,z*.15);x.font=Math.round(z*.5)+"px serif";x.fillText("💤",c.width-z*1.9,z*.05)}
+  URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error("Foto no válida")),"image/jpeg",.8)};
  im.onerror=()=>rej(new Error("No se pudo leer la foto"));im.src=u;
 })}
+// Grabador de vídeo en la app (ligero: 15 s máx. para que quepa en el servidor)
+let rStream=null,rec=null,rChunks=[],rTimer=null,rFacing="environment";
+async function openRecorder(id){
+ if(!window.MediaRecorder||!navigator.mediaDevices){toast("Este navegador no puede grabar vídeo aquí",4000);return}
+ const d=document.createElement("div");d.className="rec";d.id="recUI";
+ d.innerHTML=`<video id="rv" playsinline muted autoplay></video><div class="tm" id="rt">0:00 / 0:15</div><div class="ctl"><button class="chip" id="rx">Cancelar</button><button class="big" id="rb" aria-label="Grabar"></button><button class="chip" id="rf">Girar</button></div>`;
+ document.body.appendChild(d);
+ const close=()=>{clearInterval(rTimer);try{rec&&rec.state!=="inactive"&&(rec.onstop=null,rec.stop())}catch(e){}rec=null;if(rStream)rStream.getTracks().forEach(t=>t.stop());rStream=null;d.remove()};
+ const open=async()=>{if(rStream)rStream.getTracks().forEach(t=>t.stop());
+  rStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:rFacing,width:{ideal:640},height:{ideal:480}},audio:true});$("rv").srcObject=rStream;$("rv").style.transform=rFacing==="user"?"scaleX(-1)":""};
+ try{await open()}catch(e){close();toast("Sin permiso de cámara o micro",4000);return}
+ $("rx").onclick=close;
+ $("rf").onclick=async()=>{if(rec)return;rFacing=rFacing==="user"?"environment":"user";try{await open()}catch(e){}};
+ $("rb").onclick=()=>{
+  if(rec){rec.stop();return}
+  const mt=["video/mp4","video/webm;codecs=vp8,opus","video/webm"].find(t=>MediaRecorder.isTypeSupported(t))||"";
+  rChunks=[];rec=new MediaRecorder(rStream,{mimeType:mt||undefined,videoBitsPerSecond:700000,audioBitsPerSecond:64000});
+  rec.ondataavailable=e=>{if(e.data.size)rChunks.push(e.data)};
+  const type=(rec.mimeType||mt||"video/mp4").split(";")[0];
+  rec.onstop=async()=>{clearInterval(rTimer);const blob=new Blob(rChunks,{type});close();camMission=null;try{upStart();await upload(id,blob,type.startsWith("video/mp4")?"video/mp4":"video/webm")}catch(e){upFail(e)}};
+  rec.start();$("rb").classList.add("on");$("rx").hidden=true;$("rf").hidden=true;
+  const t0=Date.now();rTimer=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$("rt").textContent=`0:${String(s).padStart(2,"0")} / 0:15`;if(s>=15&&rec)rec.stop()},250);
+ };
+}
 function levelUp(r){const d=document.createElement("div");d.className="lv";d.innerHTML=`<div><div class="kick">Nuevo rango</div><h2>${r}</h2><p>Sigue así, el cuaderno se va llenando.</p><button class="btn">Seguir</button></div>`;d.querySelector("button").onclick=()=>d.remove();document.body.appendChild(d)}
 
 /* ---------- GPS ---------- */
@@ -415,6 +503,7 @@ function paintMap(){
 
 /* ---------- Arranque ---------- */
 function start(){
+ seenSec=null;
  $("login").hidden=true;$("app").hidden=false;$("nav").hidden=false;
  render();renderSched();refresh();
  if(map)paintMap();
@@ -427,7 +516,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&me)refres
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 if(me){
  // comprobar que el PIN guardado sigue valiendo
- api("/api/state").then(j=>{state=j;if(j.pinRequired&&!pin){me=null;showLogin()}else start()}).catch(()=>start());
+ api("/api/state?me="+me).then(j=>{state=j;if(j.pinRequired&&!pin){me=null;showLogin()}else start()}).catch(()=>start());
 }else showLogin();
 </script>
 </body>
