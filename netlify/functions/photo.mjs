@@ -2,7 +2,7 @@ import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, store, push 
 
 const KEY_RE = /^(mario|veronica)\/[a-z0-9-]{3,40}\/\d{10,14}\.(jpg|mp4|webm)$/;
 const MAX_BYTES = 5_600_000;
-const EXT = { "image/jpeg": "jpg", "video/mp4": "mp4", "video/webm": "webm" };
+const EXT = { "image/jpeg": "jpg", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mp4" };
 const MIME = { jpg: "image/jpeg", mp4: "video/mp4", webm: "video/webm" };
 
 // POST /api/photo?player=&mission=  (cuerpo: la foto en JPEG) → guarda la foto y completa la misión.

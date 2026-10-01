@@ -194,6 +194,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ac .who2 i{width:10px;height:10px;border-radius:50%}
 .ac .who2 .mario{background:var(--mario)}.ac .who2 .veronica{background:var(--vero)}
 
+/* hoja de elección */
+.sheet{position:fixed;inset:0;z-index:140;background:#07031acc;display:flex;align-items:flex-end;justify-content:center}
+.sh{width:100%;max-width:560px;background:linear-gradient(180deg,#2a1a63,var(--bg2));border:1px solid var(--edge);border-radius:28px 28px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));display:grid;gap:10px;animation:up .25s ease-out}
+.sh .btn{width:100%}
+.btn.alt{background:var(--glass2);color:var(--txt);box-shadow:0 5px 0 #0004}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
 /* nav */
 nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:50;max-width:536px;margin:0 auto;background:#0a0420dd;backdrop-filter:blur(16px);border:1px solid var(--edge);border-radius:24px;padding:6px;display:flex;gap:4px}
 nav button{position:relative;flex:1;background:none;border:0;border-radius:18px;padding:8px 2px;color:var(--mute);display:grid;gap:2px;justify-items:center;font:700 10px var(--b)}
@@ -260,7 +266,7 @@ nav .badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:16px;heigh
    <div class="panel" id="pushCard" hidden></div>
    <div class="sec-h"><h2>Pase de temporada</h2><span class="px" id="passLbl"></span></div>
    <div class="pass" id="pass"></div>
-   <div class="sec-h"><h2>Misión principal</h2><span class="px" id="secWho"></span></div>
+   <div class="sec-h"><h2>Principales</h2><span class="px" id="secWho"></span></div>
    <div id="secList"></div>
    <div class="sec-h"><h2>Secundarias</h2><span class="px" id="dayLbl"></span></div>
    <div class="days" id="dayTabs"></div>
@@ -306,6 +312,9 @@ nav .badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:16px;heigh
  <button data-t="ach"><span>🎖️</span>Logros</button>
 </nav>
 <input type="file" id="cam" accept="image/*" capture="environment" hidden>
+<input type="file" id="pickImg" accept="image/*" hidden>
+<input type="file" id="pickVid" accept="video/*" hidden>
+<div class="sheet" id="sheet" hidden><div class="sh"><div class="px mute" id="shT" style="text-align:center;margin-bottom:10px"></div><button class="btn" id="shCam"></button><button class="btn alt" id="shGal">🖼️ Subir de la galería</button><button class="chip" id="shX" style="width:100%;margin-top:6px">Cancelar</button></div></div>
 <div class="viewer" id="viewer" hidden><div class="vbox" id="vBox"></div><div class="cap"><div id="vCap" class="mute"></div><button class="btn sm" id="vClose" style="margin-top:10px">Cerrar</button></div></div>
 
 <script>
@@ -477,7 +486,7 @@ function render(){
  // Misión principal
  const tkMain=todayKey();
  const act=secOf(mine).filter(m=>!mine.done[m.id]&&(m.event||m.day===tkMain));
- $("secWho").textContent="1 foto + 1 vídeo al día · "+NAMES[rival]+" no las ve";
+ $("secWho").textContent=NAMES[rival]+" no las ve";
  let h="";
  const hm=t=>new Date(t).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Madrid"});
  if(act.length){h=act.sort((x,y)=>(y.event?1:0)-(x.event?1:0)||(x.kind==="photo"?-1:1)).map(m=>`<div class="main ${m.event?"ev":""}" data-id="${m.id}" style="margin-bottom:12px"><span class="tag">${m.event?"Evento · solo hasta las "+hm(m.until):"Principal"} · ${m.kind==="video"?"vídeo":"foto"}</span><h3>${m.t.replace(/\{r\}/g,"tu rival")}</h3><p>${m.kind==="video"?"Máx. 15 segundos. ":""}Sin que se entere ${NAMES[rival]}.</p><div class="row"><div class="xpbig">+${m.xp}<small>XP</small></div><button class="btn go">${m.kind==="video"?"Grabar":"Foto"}</button></div></div>`).join("")}
@@ -575,8 +584,8 @@ async function notify(title,body,tag){try{if("Notification" in window&&Notificat
 document.addEventListener("click",e=>{
  const t=e.target.closest("[data-k]");
  if(t&&(t.closest(".gal")||t.classList.contains("th"))){openViewer(t.dataset.k,t.dataset.c||"");return}
- const go=e.target.closest(".q .go");
- if(go&&!go.disabled){SFX.tap();openCam(go.closest(".q").dataset.id)}
+ const go=e.target.closest(".go");
+ if(go&&!go.disabled){const host=go.closest("[data-id]");if(host){SFX.tap();openCam(host.dataset.id)}}
 });
 let vUrl=null;
 async function openViewer(k,cap){
@@ -591,11 +600,48 @@ $("vClose").onclick=closeV;$("viewer").onclick=e=>{if(e.target===$("viewer"))clo
 
 /* ================= Cámara, vídeo y subida ================= */
 const missionInfo=id=>MID[id]||secOf(state.players[me]).find(m=>m.id===id)||dailyOf(state.players[me]).find(m=>m.id===id)||{};
-function openCam(id){camMission=id;const m=missionInfo(id);if(m.kind==="video"){openRecorder(id);return}$("cam").value="";$("cam").click()}
-$("cam").addEventListener("change",async()=>{
- const f=$("cam").files[0];if(!f||!camMission)return;const id=camMission;camMission=null;
- try{toast("Subiendo…",15000);const blob=await shrink(f,missionInfo(id).sticker);await upload(id,blob,"image/jpeg")}catch(e){upFail(e)}
+function openCam(id){
+ camMission=id;const m=missionInfo(id),vid=m.kind==="video";
+ $("shT").textContent=vid?"Vídeo · máx. 15 segundos":"Foto";
+ $("shCam").textContent=vid?"🎥 Grabar ahora":"📷 Hacer foto ahora";
+ $("shCam").onclick=()=>{$("sheet").hidden=true;if(vid){openRecorder(id)}else{$("cam").value="";$("cam").click()}};
+ $("shGal").onclick=()=>{$("sheet").hidden=true;const inp=vid?$("pickVid"):$("pickImg");inp.value="";inp.click()};
+ $("sheet").hidden=false;
+}
+$("shX").onclick=()=>{$("sheet").hidden=true;camMission=null};
+$("sheet").onclick=e=>{if(e.target===$("sheet")){$("sheet").hidden=true;camMission=null}};
+async function handleImage(f){
+ if(!f||!camMission)return;const id=camMission;camMission=null;
+ try{toast("Subiendo…",20000);const blob=await shrink(f,missionInfo(id).sticker);await upload(id,blob,"image/jpeg")}catch(e){upFail(e)}
+}
+$("cam").addEventListener("change",()=>handleImage($("cam").files[0]));
+$("pickImg").addEventListener("change",()=>handleImage($("pickImg").files[0]));
+$("pickVid").addEventListener("change",async()=>{
+ const f=$("pickVid").files[0];if(!f||!camMission)return;const id=camMission;camMission=null;
+ try{
+  let blob=f;
+  if(f.size>5.3e6){toast("El vídeo pesa "+(f.size/1e6).toFixed(0)+" MB. Lo comprimo, tarda lo que dure (máx. 15 s)…",60000);blob=await recompress(f)}
+  else toast("Subiendo…",20000);
+  const t=/webm/.test(blob.type)?"video/webm":"video/mp4"; // los .mov del iPhone se guardan como mp4
+  await upload(id,blob,t);
+ }catch(e){upFail(e)}
 });
+// Reduce un vídeo grande de la galería: se vuelve a grabar a 640 px en tiempo real (sin sonido, máx. 15 s)
+function recompress(file){return new Promise((res,rej)=>{
+ const cv=document.createElement("canvas");
+ if(!window.MediaRecorder||!cv.captureStream){rej(new Error("este vídeo pesa demasiado; grábalo con el botón de la app"));return}
+ const v=document.createElement("video");v.muted=true;v.playsInline=true;v.src=URL.createObjectURL(file);
+ v.onerror=()=>rej(new Error("no se pudo leer el vídeo"));
+ v.onloadedmetadata=()=>{
+  const k=Math.min(1,640/Math.max(v.videoWidth,v.videoHeight));cv.width=Math.round(v.videoWidth*k);cv.height=Math.round(v.videoHeight*k);
+  const cx=cv.getContext("2d"),mt=["video/mp4","video/webm;codecs=vp8","video/webm"].find(t=>MediaRecorder.isTypeSupported(t))||"";
+  const mr=new MediaRecorder(cv.captureStream(24),{mimeType:mt||undefined,videoBitsPerSecond:800000}),ch=[];
+  mr.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};
+  mr.onstop=()=>{URL.revokeObjectURL(v.src);const b=new Blob(ch,{type:(mr.mimeType||mt||"video/mp4").split(";")[0]});b.size?res(b):rej(new Error("no se pudo comprimir"))};
+  let t0=0;const draw=()=>{cx.drawImage(v,0,0,cv.width,cv.height);if(v.ended||v.currentTime>=15||(v.duration&&v.currentTime>=v.duration-.05)){v.pause();if(mr.state!=="inactive")mr.stop();return}requestAnimationFrame(draw)};
+  v.play().then(()=>{mr.start();requestAnimationFrame(draw)}).catch(()=>rej(new Error("no se pudo reproducir el vídeo para comprimirlo")));
+ };
+})}
 function upFail(e){SFX.err();toast(e&&e.status===401?"Código incorrecto: vuelve a entrar":"No se pudo subir: "+((e&&e.message)||"error"),4500)}
 async function upload(id,blob,type){
  if(blob.size>5.5e6)throw new Error("pesa demasiado ("+(blob.size/1e6).toFixed(1)+" MB)");
@@ -608,12 +654,21 @@ async function upload(id,blob,type){
  if(id.startsWith("llegada-"))dismissed[id]=1;
  afterState();
 }
+// Foto: se conserva la mayor resolución posible dentro del límite de 5,3 MB (2400 px → 1800 → 1400)
 function shrink(file,sticker){return new Promise((res,rej)=>{
  const u=URL.createObjectURL(file),im=new Image();
- im.onload=()=>{const M=1400,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext("2d");x.drawImage(im,0,0,c.width,c.height);
-  if(sticker){const z=Math.round(Math.min(c.width,c.height)*.28);x.font=z+"px serif";x.textBaseline="top";x.shadowColor="#000a";x.shadowBlur=z/8;x.fillText(sticker,c.width-z*1.25,z*.15);x.font=Math.round(z*.5)+"px serif";x.fillText("💤",c.width-z*1.9,z*.05)}
-  URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error("foto no válida")),"image/jpeg",.8)};
- im.onerror=()=>rej(new Error("no se pudo leer la foto"));im.src=u;
+ im.onerror=()=>rej(new Error("no se pudo leer la foto"));
+ im.onload=async()=>{
+  const toBlob=(c,q)=>new Promise(r=>c.toBlob(r,"image/jpeg",q));
+  let best=null;
+  for(const [M,q] of [[2400,.88],[2400,.78],[1800,.82],[1400,.8],[1000,.75]]){
+   const k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext("2d");x.drawImage(im,0,0,c.width,c.height);
+   if(sticker){const z=Math.round(Math.min(c.width,c.height)*.28);x.font=z+"px serif";x.textBaseline="top";x.shadowColor="#000a";x.shadowBlur=z/8;x.fillText(sticker,c.width-z*1.25,z*.15);x.font=Math.round(z*.5)+"px serif";x.fillText("💤",c.width-z*1.9,z*.05)}
+   best=await toBlob(c,q);if(best&&best.size<=5.3e6)break;
+  }
+  URL.revokeObjectURL(u);best?res(best):rej(new Error("foto no válida"));
+ };
+ im.src=u;
 })}
 let rStream=null,rec=null,rChunks=[],rTimer=null,rFacing="environment";
 async function openRecorder(id){
