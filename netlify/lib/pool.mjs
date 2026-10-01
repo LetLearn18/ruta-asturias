@@ -41,4 +41,6 @@ export const DAILY = [
   { id: "d-cielo", kind: "photo", xp: 40, short: "El cielo", t: "Foto al cielo o a las nubes." },
   { id: "d-calle", kind: "photo", xp: 50, short: "Calle bonita", t: "Foto a la calle o rincón más bonito que veas." },
   { id: "d-azul", kind: "photo", xp: 50, short: "Algo azul", t: "Foto de lo más azul que encuentres." },
+  { id: "d-verde", kind: "photo", xp: 50, short: "Algo verde", t: "Foto de lo más verde que veas." },
+  { id: "d-iconico", kind: "photo", xp: 70, short: "Lo más icónico", t: "Foto de lo más icónico del lugar donde estés." },
 ];
