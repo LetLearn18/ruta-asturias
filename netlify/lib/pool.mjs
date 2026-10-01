@@ -25,7 +25,7 @@ export const POOL = [
   { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
 ];
 
-// Misiones secundarias: cada día cada jugador recibe 5 al azar (1 de comida + 4 más), distintas para cada uno.
+// Misiones secundarias: cada día cada jugador recibe 4 al azar (1 de comida + 3 más), distintas entre los dos jugadores.
 // id único que empiece por "d-"; food: cuenta como comida. Se les añade "-lun", "-mar" o "-mie" automáticamente.
 export const DAILY = [
   { id: "d-desayuno", kind: "photo", xp: 40, food: true, short: "Desayuno", t: "Foto del desayuno." },
@@ -48,4 +48,8 @@ export const DAILY = [
   { id: "d-azul", kind: "photo", xp: 50, short: "Algo azul", t: "Foto de lo más azul que encuentres." },
   { id: "d-verde", kind: "photo", xp: 50, short: "Algo verde", t: "Foto de lo más verde que veas." },
   { id: "d-iconico", kind: "photo", xp: 70, short: "Lo más icónico", t: "Foto de lo más icónico del lugar donde estés." },
+  { id: "d-raro", kind: "photo", xp: 60, short: "Algo que no encaja", t: "Foto de algo que no encaja: lo más raro o fuera de lugar que veas." },
+  { id: "d-mirando", kind: "photo", xp: 70, short: "Rival mirando", t: "Foto de {r} mirando algo, sin que se dé cuenta." },
+  { id: "d-pies", kind: "photo", xp: 50, short: "Tus pies", t: "Foto de tus pies en el sitio más bonito en el que estés." },
+  { id: "d-movimiento", kind: "video", xp: 70, short: "Algo en movimiento", t: "Vídeo de 10 segundos de algo en movimiento (agua, nubes, gente, un animal)." },
 ];

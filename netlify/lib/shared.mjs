@@ -134,24 +134,32 @@ export function nextUnlock(pl) {
   return null;
 }
 
-// ---- Misiones secundarias: 5 al azar por jugador y día ----
+// ---- Misiones secundarias: 4 al azar por jugador y día ----
 export const DAYKEYS = ["lun", "mar", "mie"];
 const DAYSTART = { lun: "2026-10-05T00:00:00+02:00", mar: "2026-10-06T00:00:00+02:00", mie: "2026-10-07T00:00:00+02:00" };
-export function assignDaily(pl) {
+export function assignDaily(pl, rival) {
   pl.daily ||= {};
   let changed = false;
   const prod = Netlify.context?.deploy?.context === "production";
+  const shuffle = (a) => a.map((x) => [Math.random(), x]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
   for (const d of DAYKEYS) {
-    if (pl.daily[d]) continue;
+    const cur = pl.daily[d];
+    // un día viejo de 5 sin nada hecho se vuelve a sortear (solo ocurre en pruebas)
+    if (cur && !(cur.length === 5 && !cur.some((m) => pl.done[m.id]))) continue;
     if (prod && Date.now() < new Date(DAYSTART[d]).getTime()) continue; // en producción, cada día se abre a su hora
     if (prod && Date.now() > END) continue;
-    const used = new Set(Object.values(pl.daily).flat().map((m) => m.tpl));
-    const fresh = (m) => !used.has(m.id);
-    const shuffle = (a) => a.map((x) => [Math.random(), x]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-    const food = shuffle(DAILY.filter((m) => m.food && fresh(m)))[0] || shuffle(DAILY.filter((m) => m.food))[0];
-    const rest = shuffle(DAILY.filter((m) => !m.food && fresh(m)));
-    const more = rest.length >= 4 ? rest.slice(0, 4) : [...rest, ...shuffle(DAILY.filter((m) => !m.food && !rest.includes(m)))].slice(0, 4);
-    pl.daily[d] = shuffle([food, ...more]).map((m) => ({ ...m, tpl: m.id, id: m.id + "-" + d, day: d }));
+    const mine = new Set(Object.entries(pl.daily).filter(([k]) => k !== d).flatMap(([, v]) => v).map((m) => m.tpl));
+    const theirs = new Set(Object.values(rival?.daily || {}).flat().map((m) => m.tpl));
+    // se prefiere lo que ni tú ni tu rival habéis recibido; si no alcanza, lo que tú no tengas; si no, cualquiera
+    const pick = (list, n) => {
+      const t1 = shuffle(list.filter((m) => !mine.has(m.id) && !theirs.has(m.id)));
+      const t2 = shuffle(list.filter((m) => !mine.has(m.id) && theirs.has(m.id)));
+      const t3 = shuffle(list.filter((m) => mine.has(m.id)));
+      return [...t1, ...t2, ...t3].slice(0, n);
+    };
+    const food = pick(DAILY.filter((m) => m.food), 1);
+    const more = pick(DAILY.filter((m) => !m.food), 3);
+    pl.daily[d] = shuffle([...food, ...more]).map((m) => ({ ...m, tpl: m.id, id: m.id + "-" + d, day: d }));
     changed = true;
   }
   return changed;
@@ -210,7 +218,7 @@ export async function advanceAll(skip) {
   for (const p of order) {
     const pl = out[p];
     const t = tick(pl, p, owners, out[p === "mario" ? "veronica" : "mario"]);
-    const dd = assignDaily(pl);
+    const dd = assignDaily(pl, out[p === "mario" ? "veronica" : "mario"]);
     if (t.changed || dd) {
       await writePlayer(p, pl);
       if (t.added && p !== skip) await push(p, "🕶️ Misión principal", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
