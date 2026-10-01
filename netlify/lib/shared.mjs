@@ -51,7 +51,7 @@ function quietHours() { // sin avisos de madrugada (solo producción)
   const h = +new Date().toLocaleString("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hour12: false });
   return h < 8 || h >= 23;
 }
-export function tick(pl, name, owners = {}) {
+export function tick(pl, name, owners = {}, rival = null) {
   pl.secret ||= []; pl.done ||= {};
   if (!inWindow()) return { changed: false, added: false };
   const now = Date.now();
@@ -80,8 +80,10 @@ export function tick(pl, name, owners = {}) {
     const used = new Set(pl.secret.map((x) => x.id));
     const pick = (kind) => {
       const ok = (m) => m.kind === kind && (!m.days || m.days.includes(d));
-      let free = pool.filter((m) => ok(m) && !used.has(m.id));
-      if (!free.length) free = pool.filter(ok); // si se acaban, se repite alguna
+      const theirs = new Set(((rival && rival.secret) || []).filter((x) => !x.event).map((x) => x.id)); // las del rival
+      let free = pool.filter((m) => ok(m) && !used.has(m.id) && !theirs.has(m.id)); // ni mías ni de mi rival
+      if (!free.length) free = pool.filter((m) => ok(m) && !used.has(m.id)); // si faltan misiones, se comparte alguna
+      if (!free.length) free = pool.filter(ok);
       // si el día tiene una misión que solo vale hoy (los lagos), va primero
       const only = free.filter((m) => m.days);
       if (only.length) free = only;
@@ -203,15 +205,16 @@ export async function push(player, title, body, url = "./") {
 export async function advanceAll(skip) {
   const out = {};
   const owners = await eventOwners();
-  for (const p of PLAYERS) {
-    const pl = await readPlayer(p);
-    const t = tick(pl, p, owners);
+  const order = [...PLAYERS].sort(() => Math.random() - 0.5); // quién elige primero cada día se sortea
+  for (const p of PLAYERS) out[p] = await readPlayer(p);
+  for (const p of order) {
+    const pl = out[p];
+    const t = tick(pl, p, owners, out[p === "mario" ? "veronica" : "mario"]);
     const dd = assignDaily(pl);
     if (t.changed || dd) {
       await writePlayer(p, pl);
       if (t.added && p !== skip) await push(p, "🕶️ Misión principal", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
     }
-    out[p] = pl;
   }
   return out;
 }
