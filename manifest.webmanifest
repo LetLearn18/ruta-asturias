@@ -1,2 +1,2 @@
-{"name":"Expedición Asturias","short_name":"Expedición","start_url":"./","scope":"./","display":"standalone","background_color":"#0E1A2B","theme_color":"#0E1A2B","lang":"es",
+{"name":"Duelo en los Picos","short_name":"Duelo Picos","start_url":"./","scope":"./","display":"standalone","background_color":"#0B0716","theme_color":"#0B0716","lang":"es",
 "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
