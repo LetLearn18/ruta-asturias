@@ -1,4 +1,4 @@
-const C="ruta-asturias-v3";
+const C="ruta-asturias-v4";
 const CORE=["./","index.html","clasico.html","manifest.webmanifest","icon-192.png","apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
@@ -18,4 +18,8 @@ self.addEventListener("notificationclick",e=>{
     for(const c of cs){if("navigate" in c){return c.navigate(url).then(w=>(w||c).focus())}}
     return self.clients.openWindow(url);
   }));
+});
+self.addEventListener("push",e=>{
+  let d={};try{d=e.data.json()}catch(_){}
+  e.waitUntil(self.registration.showNotification(d.title||"Expedición Asturias",{body:d.body||"",icon:"icon-192.png",badge:"icon-192.png",tag:d.tag||"exp",data:{url:d.url||"./"}}));
 });

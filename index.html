@@ -161,6 +161,7 @@ nav button.on{color:var(--ink);background:var(--cider)}
 
  <section id="tab-mis">
   <div class="card" id="myCard"></div>
+  <div class="card" id="pushCard" hidden></div>
   <div id="missions"></div>
  </section>
 
@@ -434,6 +435,34 @@ async function openRecorder(id){
 }
 function levelUp(r){const d=document.createElement("div");d.className="lv";d.innerHTML=`<div><div class="kick">Nuevo rango</div><h2>${r}</h2><p>Sigue así, el cuaderno se va llenando.</p><button class="btn">Seguir</button></div>`;d.querySelector("button").onclick=()=>d.remove();document.body.appendChild(d)}
 
+/* ---------- Avisos push ---------- */
+const iosWeb=/iPhone|iPad/.test(navigator.userAgent)&&!window.navigator.standalone;
+const b64=u=>{const p="=".repeat((4-u.length%4)%4),r=atob((u+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+async function pushState(){
+ const c=$("pushCard");
+ if(!me){return}
+ const ok="serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+ if(iosWeb){c.hidden=false;c.innerHTML=`<div class="kick">Avisos</div><p class="sub" style="margin:6px 0 0">Para recibir avisos con la app cerrada en iPhone: en Safari pulsa Compartir → <b>Añadir a pantalla de inicio</b>, abre la app desde ese icono y vuelve aquí.</p>`;return}
+ if(!ok){c.hidden=true;return}
+ let sub=null;try{const reg=await navigator.serviceWorker.ready;sub=await reg.pushManager.getSubscription()}catch(e){}
+ const on=Notification.permission==="granted"&&sub&&LS.get("pushOn_"+me,false);
+ if(on){c.hidden=true;return}
+ c.hidden=false;
+ c.innerHTML=`<div class="kick">Avisos</div><p class="sub" style="margin:6px 0 10px">${Notification.permission==="denied"?"Los avisos están bloqueados en los ajustes del navegador.":"Recibe un aviso cuando llegue una misión secreta nueva, aunque tengas la app cerrada."}</p><button class="btn" id="pushBtn" ${Notification.permission==="denied"?"disabled":""}>🔔 Activar avisos</button>`;
+ $("pushBtn").onclick=enablePush;
+}
+async function enablePush(){
+ try{
+  const perm=await Notification.requestPermission();if(perm!=="granted"){pushState();return}
+  const reg=await navigator.serviceWorker.ready;
+  const {key}=await api("/api/push");
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(key)});
+  await api("/api/push",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({player:me,subscription:sub.toJSON()})});
+  LS.set("pushOn_"+me,true);toast("Avisos activados 🔔");pushState();
+ }catch(e){toast("No se pudieron activar los avisos: "+((e&&e.message)||"error"),4500)}
+}
+
 /* ---------- GPS ---------- */
 const hav=(a,b,c,d)=>{const R=6371e3,t=x=>x*Math.PI/180,dl=t(c-a),dn=t(d-b),h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 const fmtD=m=>m<1000?Math.round(m)+" m":(m/1000).toFixed(m<10000?1:0).replace(".",",")+" km";
@@ -505,7 +534,7 @@ function paintMap(){
 function start(){
  seenSec=null;
  $("login").hidden=true;$("app").hidden=false;$("nav").hidden=false;
- render();renderSched();refresh();
+ render();renderSched();refresh();pushState();
  if(map)paintMap();
  const m=new URLSearchParams(location.search).get("mision");
  if(m&&MID[m]){history.replaceState(null,"",location.pathname)}

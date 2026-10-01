@@ -1,16 +1,13 @@
-import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, tick, view } from "../lib/shared.mjs";
+import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, advanceAll, view } from "../lib/shared.mjs";
 
 // GET ?me=mario|veronica: progreso (del rival solo lo ya cumplido). POST: marcar una misión normal.
 export default async (req) => {
   const url = new URL(req.url);
   if (req.method === "GET") {
     const me = url.searchParams.get("me");
+    const all = await advanceAll(me);
     const players = {};
-    for (const p of PLAYERS) {
-      const pl = await readPlayer(p);
-      if (tick(pl)) await writePlayer(p, pl);
-      players[p] = view(pl, p === me);
-    }
+    for (const p of PLAYERS) players[p] = view(all[p], p === me);
     return json({ players, pinRequired: !!Netlify.env.get("TRIP_PIN"), now: Date.now() });
   }
   if (req.method === "POST") {

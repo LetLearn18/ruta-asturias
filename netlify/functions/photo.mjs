@@ -1,4 +1,4 @@
-import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, store } from "../lib/shared.mjs";
+import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, store, push } from "../lib/shared.mjs";
 
 const KEY_RE = /^(mario|veronica)\/[a-z0-9-]{3,40}\/\d{10,14}\.(jpg|mp4|webm)$/;
 const MAX_BYTES = 5_600_000;
@@ -38,6 +38,10 @@ export default async (req) => {
     await photos.set(key, buf);
     cur.done[mission] = { ts, photo: key };
     await writePlayer(player, cur);
+    if (mission.startsWith("s-")) {
+      const rival = player === "mario" ? "veronica" : "mario";
+      try { await push(rival, "👀 Tu rival puntúa", "Ha cumplido una misión secreta. ¿Qué habrá sido?"); } catch {}
+    }
     return json({ ok: true, key });
   }
 
