@@ -35,7 +35,7 @@ export async function writePlayer(name, data) {
 export const START = new Date("2026-10-05T06:00:00+02:00").getTime();
 export const END = new Date("2026-10-08T03:00:00+02:00").getTime();
 export const UNLOCK_EVERY = 2 * 3600e3; // sin uso con una sola activa
-export const COOLDOWN = 15 * 60e3;      // al completar la principal, la siguiente llega a los 15 min
+export const COOLDOWN = 2 * 3600e3;     // al completar la principal, la siguiente llega 2 h después
 export const MAX_ACTIVE = 1;            // una misión principal cada vez
 
 // Fuera de producción (preview) siempre activo, para poder probar.
@@ -45,35 +45,57 @@ export function inWindow() {
   return n >= START && n <= END;
 }
 
+const isEvent = (m) => !!m.win;
+function quietHours() { // sin avisos de madrugada (solo producción)
+  if (Netlify.context?.deploy?.context !== "production") return false;
+  const h = +new Date().toLocaleString("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hour12: false });
+  return h < 8 || h >= 23;
+}
 export function tick(pl) {
   pl.secret ||= []; pl.done ||= {};
-  if (!inWindow() || pl.secret.length >= POOL.length) return false;
+  if (!inWindow()) return { changed: false, added: false };
   const now = Date.now();
-  const act = pl.secret.filter((s) => !pl.done[s.id]);
-  const lastDone = Math.max(0, ...pl.secret.map((s) => pl.done[s.id]?.ts || 0));
-  const lastUn = Math.max(0, ...pl.secret.map((s) => s.at));
-  const due = pl.secret.length === 0
+  const prod = Netlify.context?.deploy?.context === "production";
+  let changed = false, added = false;
+  // 1) caducan los eventos que no se cumplieron
+  const before = pl.secret.length;
+  pl.secret = pl.secret.filter((m) => !(m.until && m.until < now && !pl.done[m.id]));
+  if (pl.secret.length !== before) changed = true;
+  // 2) eventos: se reparten solo dentro de su franja
+  for (const m of POOL.filter(isEvent)) {
+    if (pl.secret.some((x) => x.id === m.id)) continue;
+    const w = prod ? m.win.find(([a, b]) => now >= new Date(a).getTime() && now < new Date(b).getTime()) : [0, new Date(now + 3600e3).toISOString()];
+    if (!w) continue;
+    pl.secret.push({ ...m, at: now, until: new Date(w[1]).getTime(), event: true });
+    changed = true; added = true;
+  }
+  // 3) misión principal normal: una a la vez
+  const normal = pl.secret.filter((m) => !m.event);
+  const act = normal.filter((s) => !pl.done[s.id]);
+  const pool = POOL.filter((m) => !isEvent(m));
+  if (normal.length >= pool.length || quietHours()) return { changed, added };
+  const lastDone = Math.max(0, ...normal.map((s) => pl.done[s.id]?.ts || 0));
+  const lastUn = Math.max(0, ...normal.map((s) => s.at));
+  const due = normal.length === 0
     || (act.length === 0 && now - lastDone >= COOLDOWN)
     || (act.length < MAX_ACTIVE && now - lastUn >= UNLOCK_EVERY);
-  if (!due) return false;
+  if (!due) return { changed, added };
   const used = new Set(pl.secret.map((s) => s.id));
-  const free = POOL.filter((m) => !used.has(m.id));
-  const first = pl.secret.length === 0 && free.find((m) => m.id === FIRST_ID);
+  const free = pool.filter((m) => !used.has(m.id));
+  const first = normal.length === 0 && free.find((m) => m.id === FIRST_ID);
   pl.secret.push({ ...(first || free[Math.floor(Math.random() * free.length)]), at: now });
-  return true;
+  return { changed: true, added: true };
 }
 
 export function nextUnlock(pl) {
   const now = Date.now();
   if (!inWindow()) return now < START ? START : null;
-  if (pl.secret.length >= POOL.length) return null;
-  const act = pl.secret.filter((s) => !pl.done[s.id]);
-  const lastDone = Math.max(0, ...pl.secret.map((s) => pl.done[s.id]?.ts || 0));
-  const lastUn = Math.max(0, ...pl.secret.map((s) => s.at));
-  const c = [];
-  if (act.length < MAX_ACTIVE) c.push(lastUn + UNLOCK_EVERY);
-  if (act.length === 0) c.push(lastDone + COOLDOWN);
-  return c.length ? Math.max(now, Math.min(...c)) : null;
+  const normal = (pl.secret || []).filter((m) => !m.event);
+  if (normal.length >= POOL.filter((m) => !isEvent(m)).length) return null;
+  const act = normal.filter((s) => !pl.done[s.id]);
+  if (act.length) return null; // hasta cumplir la actual no llega otra
+  const lastDone = Math.max(0, ...normal.map((s) => pl.done[s.id]?.ts || 0));
+  return Math.max(now, lastDone + COOLDOWN);
 }
 
 // ---- Misiones secundarias: 5 al azar por jugador y día ----
@@ -148,11 +170,11 @@ export async function advanceAll(skip) {
   const out = {};
   for (const p of PLAYERS) {
     const pl = await readPlayer(p);
-    const fresh = tick(pl);
+    const t = tick(pl);
     const dd = assignDaily(pl);
-    if (fresh || dd) {
+    if (t.changed || dd) {
       await writePlayer(p, pl);
-      if (fresh && p !== skip) await push(p, "🕶️ Misión principal", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
+      if (t.added && p !== skip) await push(p, "🕶️ Misión principal", "Tienes una misión nueva. Ábrela sin que te vea tu rival.");
     }
     out[p] = pl;
   }

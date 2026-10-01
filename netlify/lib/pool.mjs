@@ -2,11 +2,14 @@
 // Para añadir una: id único que empiece por "s-" (a-z, 0-9, guiones, máx. 40), kind "photo" o "video", xp, short y t.
 // sticker: emoji que la app pega sobre la foto (opcional). La primera de cada jugador siempre es FIRST_ID.
 export const FIRST_ID = "s-durmiendo";
+// win: [[inicio, fin], ...]. Misión de evento: solo se reparte si en ese momento estás en esa franja
+// (extra, no cuenta como la principal en curso) y caduca al terminar si no se cumple.
 export const POOL = [
   { id: "s-durmiendo", kind: "photo", xp: 200, short: "Rival dormido", t: "Hazle una foto a {r} durmiendo." },
   { id: "s-muneco", kind: "photo", xp: 180, short: "Rival con muñeco dormilón", t: "Fotografía a {r} con los ojos cerrados. La app le pega un muñeco dormilón.", sticker: "😴" },
   { id: "s-lagos", kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
   { id: "s-andando", kind: "video", xp: 160, short: "Rival andando", t: "Graba a {r} andando sin que se dé cuenta." },
+  { id: "s-tren", kind: "photo", xp: 130, short: "Rival en el tren", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-05T09:15:00+02:00", "2026-10-05T12:44:00+02:00"], ["2026-10-07T18:56:00+02:00", "2026-10-07T22:25:00+02:00"]] },
   { id: "s-fuente", kind: "video", xp: 170, short: "Bebiendo en la fuente", t: "Graba a {r} bebiendo de la fuente de la capilla." },
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },

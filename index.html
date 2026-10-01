@@ -105,6 +105,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .main.wait .tag{background:var(--glass2)}
 .cd{font:800 30px var(--d);font-variant-numeric:tabular-nums;color:var(--epi)}
 
+.main.ev{background:linear-gradient(150deg,#7cf0ff,#4d8dff 55%,#6a3dd0)}
 /* secundarias */
 .q{position:relative;display:flex;gap:12px;align-items:center;background:var(--glass);border:1px solid var(--edge);border-radius:18px;padding:12px;margin:9px 0}
 .q .ic{width:46px;height:46px;border-radius:14px;background:#ffffff12;display:grid;place-items:center;font-size:23px;flex:none}
@@ -469,7 +470,8 @@ function render(){
  const act=secOf(mine).filter(m=>!mine.done[m.id]);
  $("secWho").textContent=NAMES[rival]+" no la ve";
  let h="";
- if(act.length){const m=act[0];h=`<div class="main" data-id="${m.id}"><span class="tag">Principal · ${m.kind==="video"?"vídeo":"foto"}</span><h3>${m.t.replace(/\{r\}/g,"tu rival")}</h3><p>${m.kind==="video"?"Máx. 15 segundos. ":""}Sin que se entere ${NAMES[rival]}.</p><div class="row"><div class="xpbig">+${m.xp}<small>XP</small></div><button class="btn go">${m.kind==="video"?"Grabar":"Foto"}</button></div></div>`}
+ const hm=t=>new Date(t).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Madrid"});
+ if(act.length){h=act.sort((x,y)=>(y.event?1:0)-(x.event?1:0)).map(m=>`<div class="main ${m.event?"ev":""}" data-id="${m.id}" style="margin-bottom:12px"><span class="tag">${m.event?"Evento · solo hasta las "+hm(m.until):"Principal"} · ${m.kind==="video"?"vídeo":"foto"}</span><h3>${m.t.replace(/\{r\}/g,"tu rival")}</h3><p>${m.kind==="video"?"Máx. 15 segundos. ":""}Sin que se entere ${NAMES[rival]}.</p><div class="row"><div class="xpbig">+${m.xp}<small>XP</small></div><button class="btn go">${m.kind==="video"?"Grabar":"Foto"}</button></div></div>`).join("")}
  else{h=`<div class="main wait"><span class="tag">Principal</span><h3>${secOf(mine).length?"Principal cumplida":"Aún no hay misión principal"}</h3><p>${mine.next?"La siguiente llega en":"Llegarán solas. Activa los avisos para enterarte."}</p>${mine.next?`<div class="cd" id="cd" data-t="${mine.next}">--:--</div>`:""}</div>`}
  const doneS=secOf(mine).filter(m=>mine.done[m.id]);
  if(doneS.length)h+=`<p class="mute" style="font-size:13px;margin:10px 2px 0">Cumplidas: ${doneS.map(m=>m.short).join(" · ")}</p>`;
