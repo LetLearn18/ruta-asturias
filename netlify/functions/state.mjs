@@ -1,17 +1,17 @@
-import type { Config } from "@netlify/functions";
-import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer } from "../lib/shared.mts";
+import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer } from "../lib/shared.mjs";
 
 // GET: progreso de los dos viajeros. POST: marcar o desmarcar una misión propia.
-export default async (req: Request) => {
+export default async (req) => {
   if (req.method === "GET") {
-    const players: Record<string, unknown> = {};
+    const players = {};
     for (const p of PLAYERS) players[p] = await readPlayer(p);
     return json({ players, pinRequired: !!Netlify.env.get("TRIP_PIN") });
   }
   if (req.method === "POST") {
     if (!pinOk(req)) return json({ error: "PIN incorrecto" }, 401);
-    let body: any;
+    let body;
     try { body = await req.json(); } catch { return json({ error: "Petición no válida" }, 400); }
+    if (body?.check) return json({ ok: true }); // solo comprobar el PIN al entrar
     const { player, mission, done } = body || {};
     if (!PLAYERS.includes(player) || !MISSION_RE.test(mission || "")) return json({ error: "Viajero o misión no válidos" }, 400);
     const cur = await readPlayer(player);
@@ -23,4 +23,4 @@ export default async (req: Request) => {
   return json({ error: "Método no permitido" }, 405);
 };
 
-export const config: Config = { path: "/api/state" };
+export const config = { path: "/api/state" };

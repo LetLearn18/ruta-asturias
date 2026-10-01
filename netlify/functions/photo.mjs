@@ -1,12 +1,11 @@
-import type { Config } from "@netlify/functions";
-import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, store } from "../lib/shared.mts";
+import { PLAYERS, MISSION_RE, json, pinOk, readPlayer, writePlayer, store } from "../lib/shared.mjs";
 
 const KEY_RE = /^(mario|veronica)\/[a-z0-9-]{3,40}\/\d{10,14}\.jpg$/;
 const MAX_BYTES = 4_500_000;
 
 // POST /api/photo?player=&mission=  (cuerpo: la foto en JPEG) → guarda la foto y completa la misión.
 // GET  /api/photo?key=              → devuelve la foto.
-export default async (req: Request) => {
+export default async (req) => {
   const url = new URL(req.url);
   const photos = store("ruta-fotos");
 
@@ -40,4 +39,4 @@ export default async (req: Request) => {
   return json({ error: "Método no permitido" }, 405);
 };
 
-export const config: Config = { path: "/api/photo" };
+export const config = { path: "/api/photo" };
