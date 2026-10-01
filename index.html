@@ -299,7 +299,7 @@ nav .badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:16px;heigh
   <!-- LOGROS -->
   <section id="tab-ach" hidden>
    <div class="sec-h"><h2>Logros</h2><span class="px" id="achN"></span></div>
-   <p class="mute" style="margin:0 0 10px;font-size:14px">Cada logro da +50 XP. El cuadrito de color dice quién lo tiene.</p>
+   <p class="mute" style="margin:0 0 10px;font-size:14px">Cada logro da +25 XP. El cuadrito de color dice quién lo tiene.</p>
    <div class="ach" id="ach"></div>
   </section>
  </main>
@@ -365,24 +365,34 @@ function entries(pk){ // misiones completadas de un jugador
  return out.sort((a,b)=>a.ts-b.ts);
 }
 const isFood=x=>x.m.kind==="daily"&&x.m.food;
+const isMain=x=>x.secret&&!x.m.win;           // principal normal (1 foto + 1 vídeo al día)
+const byDay=(E,f)=>{const o={};E.filter(f).forEach(x=>{o[x.m.day]=(o[x.m.day]||0)+1});return o};
+const sumXp=E=>E.reduce((a,x)=>a+x.xp,0);
 const ACH=[
- {id:"first",e:"🩸",n:"Primera sangre",d:"Completa tu primera misión",t:E=>E.length>=1},
+ {id:"first",e:"🩸",n:"Primera sangre",d:"Cumple la primera misión antes que tu rival",t:(E,pk)=>{if(!E.length)return false;const R=entries(OTHER[pk]);return !R.length||E[0].ts<R[0].ts}},
  {id:"zone2",e:"🧭",n:"Explorador",d:"Conquista 2 zonas",t:E=>E.filter(x=>x.m.kind==="zone").length>=2},
  {id:"zone4",e:"🗺️",n:"Dueño del mapa",d:"Conquista las 4 zonas",t:E=>E.filter(x=>x.m.kind==="zone").length>=4},
- {id:"food5",e:"🍖",n:"Gourmet",d:"5 fotos de comidas",t:E=>E.filter(isFood).length>=5},
- {id:"food9",e:"👨‍🍳",n:"Crítico gastronómico",d:"Las 9 comidas del viaje",t:E=>E.filter(isFood).length>=9},
- {id:"sun",e:"🌅",n:"Cazador de atardeceres",d:"2 fotos de atardecer",t:E=>E.filter(x=>x.k.startsWith("d-atardecer-")).length>=2},
- {id:"spot",e:"🎞️",n:"Rincón secreto",d:"2 vídeos de sitios especiales",t:E=>E.filter(x=>x.k.startsWith("d-especial-")).length>=2},
- {id:"spy3",e:"🕵️",n:"Espía",d:"3 misiones principales",t:E=>E.filter(x=>x.secret).length>=3},
- {id:"spy6",e:"🥷",n:"Maestro del sigilo",d:"6 misiones principales",t:E=>E.filter(x=>x.secret).length>=6},
- {id:"video",e:"🎬",n:"Director",d:"Sube tu primer vídeo",t:E=>E.some(x=>/\.(mp4|webm)$/.test(x.photo||""))},
- {id:"legend",e:"💎",n:"Cazador de leyendas",d:"Completa una misión legendaria",t:E=>E.some(x=>x.secret&&x.xp>=140)},
- {id:"early",e:"🌅",n:"Madrugador",d:"Misión antes de las 9:00",t:E=>E.some(x=>{const h=madH(x.ts);return h>=5&&h<9})},
- {id:"night",e:"🌙",n:"Noctámbulo",d:"Misión después de las 23:00",t:E=>E.some(x=>{const h=madH(x.ts);return h>=23||h<4})},
- {id:"combo",e:"🔥",n:"Combo x3",d:"3 misiones en menos de 1 hora",t:E=>E.some((x,i)=>E[i+2]&&E[i+2].ts-x.ts<=3600e3)},
  {id:"first-in",e:"⚡",n:"Pionero",d:"Llega antes que tu rival a 2 zonas",t:(E,pk)=>{const R=state.players[OTHER[pk]].done||{};return E.filter(x=>x.m.kind==="zone"&&(!R[x.k]||R[x.k].ts>x.ts)).length>=2}},
+ {id:"place1",e:"🏛️",n:"Turista curioso",d:"Cumple 1 misión de Lugares",t:E=>E.some(x=>x.m.kind==="place")},
+ {id:"place3",e:"🗿",n:"Guía local",d:"Cumple las 3 de Lugares: puente, basílica y estatua",t:E=>E.filter(x=>x.m.kind==="place").length>=3},
+ {id:"food2",e:"🍖",n:"Gourmet",d:"2 fotos de comidas",t:E=>E.filter(isFood).length>=2},
+ {id:"food3",e:"👨‍🍳",n:"Crítico gastronómico",d:"Las 3 fotos de comida del viaje",t:E=>E.filter(isFood).length>=3},
+ {id:"perfect",e:"🌟",n:"Día perfecto",d:"Las 5 secundarias de un mismo día",t:(E,pk)=>{const c=byDay(E,x=>x.m.kind==="daily"),dl=(state.players[pk].daily)||{};return Object.keys(c).some(d=>dl[d]&&c[d]>=dl[d].length&&dl[d].length>=5)}},
+ {id:"perfect3",e:"🏅",n:"Tres días perfectos",d:"Las secundarias completas los 3 días",t:(E,pk)=>{const c=byDay(E,x=>x.m.kind==="daily"),dl=(state.players[pk].daily)||{};return DAYKEYS.every(d=>dl[d]&&dl[d].length>=5&&(c[d]||0)>=dl[d].length)}},
+ {id:"main2",e:"🕵️",n:"Doble de hoy",d:"Las 2 principales (foto y vídeo) de un día",t:E=>Object.values(byDay(E,isMain)).some(n=>n>=2)},
+ {id:"main6",e:"🥷",n:"Pleno de principales",d:"Las 6 principales del viaje",t:E=>E.filter(isMain).length>=6},
+ {id:"train",e:"🚆",n:"Pasajero",d:"Cumple el evento del tren",t:E=>E.some(x=>x.k.startsWith("s-tren"))},
+ {id:"sleep",e:"🌙",n:"Cazador nocturno",d:"Cumple el evento de rival durmiendo",t:E=>E.some(x=>x.k.startsWith("s-durmiendo"))},
+ {id:"video",e:"🎬",n:"Director",d:"Sube tu primer vídeo",t:E=>E.some(x=>isVid(x.photo))},
+ {id:"video5",e:"🎞️",n:"Cineasta",d:"Sube 5 vídeos",t:E=>E.filter(x=>isVid(x.photo)).length>=5},
+ {id:"lagos",e:"🏔️",n:"Rey de los lagos",d:"Conquista los Lagos y graba el vídeo de los lagos",t:E=>E.some(x=>x.k==="llegada-lag")&&E.some(x=>x.k==="s-lagos")},
+ {id:"early",e:"🌅",n:"Madrugador",d:"Una misión antes de las 9:00",t:E=>E.some(x=>{const h=madH(x.ts);return h>=5&&h<9})},
+ {id:"night",e:"🦉",n:"Noctámbulo",d:"Una misión después de las 23:00",t:E=>E.some(x=>{const h=madH(x.ts);return h>=23||h<4})},
+ {id:"combo",e:"🔥",n:"Combo x3",d:"3 misiones en menos de 1 hora",t:E=>E.some((x,i)=>E[i+2]&&E[i+2].ts-x.ts<=3600e3)},
+ {id:"lvl5",e:"⭐",n:"Cazador",d:"Llega al nivel 5 del pase",t:E=>lvlOf(sumXp(E))>=5},
+ {id:"lvl10",e:"👑",n:"Mito de los Picos",d:"Llega al nivel 10 del pase",t:E=>lvlOf(sumXp(E))>=10},
 ];
-const ACH_XP=50;
+const ACH_XP=25;
 function score(pk){
  const E=entries(pk),got=ACH.filter(a=>a.t(E,pk));
  const base=E.reduce((a,x)=>a+x.xp,0);
