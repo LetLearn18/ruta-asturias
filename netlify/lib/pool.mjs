@@ -7,15 +7,15 @@ export const FIRST_ID = null; // si pones un id, será la primera principal de c
 export const POOL = [
   { id: "s-durmiendo-lun", kind: "photo", xp: 200, short: "Rival dormido (lunes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-05T23:00:00+02:00", "2026-10-06T08:00:00+02:00"]] },
   { id: "s-durmiendo-mar", kind: "photo", xp: 200, short: "Rival dormido (martes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-06T23:00:00+02:00", "2026-10-07T08:00:00+02:00"]] },
-  { id: "s-muneco", kind: "photo", xp: 180, short: "Rival con muñeco dormilón", t: "Fotografía a {r} con los ojos cerrados. La app le pega un muñeco dormilón.", sticker: "😴" },
   { id: "s-lagos", kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
   { id: "s-andando", kind: "video", xp: 160, short: "Rival andando", t: "Graba a {r} andando sin que se dé cuenta." },
   { id: "s-tren", kind: "photo", xp: 130, short: "Rival en el tren", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-05T09:15:00+02:00", "2026-10-05T12:44:00+02:00"], ["2026-10-07T18:56:00+02:00", "2026-10-07T22:25:00+02:00"]] },
   { id: "s-fuente", kind: "video", xp: 170, short: "Bebiendo en la fuente", t: "Graba a {r} bebiendo de la fuente de la capilla." },
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },
+  { id: "s-sombras-juntas", kind: "photo", xp: 130, short: "Sombras juntas", t: "Foto de vuestras dos sombras juntas." },
+  { id: "s-historico", kind: "photo", xp: 140, short: "Algo histórico", t: "Foto de algo histórico de la zona donde estéis." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },
   { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
-  { id: "s-sombra", kind: "photo", xp: 110, short: "Sombra", t: "Foto a la sombra de {r} haciendo algo ridículo." },
 ];
 
 // Misiones secundarias: cada día cada jugador recibe 5 al azar (1 de comida + 4 más), distintas para cada uno.
