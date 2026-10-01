@@ -51,7 +51,7 @@ function quietHours() { // sin avisos de madrugada (solo producción)
   const h = +new Date().toLocaleString("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hour12: false });
   return h < 8 || h >= 23;
 }
-export function tick(pl, name) {
+export function tick(pl, name, owners = {}) {
   pl.secret ||= []; pl.done ||= {};
   if (!inWindow()) return { changed: false, added: false };
   const now = Date.now();
@@ -63,7 +63,7 @@ export function tick(pl, name) {
   if (pl.secret.length !== before) changed = true;
   // 2) eventos: se reparten solo dentro de su franja
   for (const m of POOL.filter(isEvent)) {
-    if (m.for && m.for !== name) continue; // cada evento es de un solo jugador
+    if (owners[m.id] !== name) continue; // cada evento es de un solo jugador, sorteado
     if (pl.secret.some((x) => x.id === m.id)) continue;
     // En producción solo dentro de su franja. En preview, de uno en uno para poder probarlos.
     if (!prod && pl.secret.some((x) => x.event && !pl.done[x.id])) continue;
@@ -88,6 +88,23 @@ export function tick(pl, name) {
   const first = normal.length === 0 && free.find((m) => m.id === FIRST_ID);
   pl.secret.push({ ...(first || free[Math.floor(Math.random() * free.length)]), at: now });
   return { changed: true, added: true };
+}
+
+// Sorteo (una sola vez) de a quién le toca cada evento, a partes iguales.
+export async function eventOwners() {
+  const st = store("ruta-estado");
+  let o = (await st.get("_eventos", { type: "json" })) || {};
+  const todo = POOL.filter(isEvent).map((m) => m.id).filter((i) => !o[i]);
+  if (!todo.length) return o;
+  const cnt = { mario: 0, veronica: 0 };
+  Object.values(o).forEach((v) => { if (cnt[v] != null) cnt[v]++; });
+  todo.sort(() => Math.random() - 0.5);
+  for (const id of todo) {
+    const w = cnt.mario === cnt.veronica ? PLAYERS[Math.floor(Math.random() * 2)] : cnt.mario < cnt.veronica ? "mario" : "veronica";
+    o[id] = w; cnt[w]++;
+  }
+  await st.setJSON("_eventos", o);
+  return o;
 }
 
 export function nextUnlock(pl) {
@@ -171,9 +188,10 @@ export async function push(player, title, body, url = "./") {
 // Avanza el desbloqueo de misiones de los dos y avisa a quien reciba una nueva (salvo a quien está mirando la app ahora).
 export async function advanceAll(skip) {
   const out = {};
+  const owners = await eventOwners();
   for (const p of PLAYERS) {
     const pl = await readPlayer(p);
-    const t = tick(pl, p);
+    const t = tick(pl, p, owners);
     const dd = assignDaily(pl);
     if (t.changed || dd) {
       await writePlayer(p, pl);

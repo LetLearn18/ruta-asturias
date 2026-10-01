@@ -5,13 +5,11 @@ export const FIRST_ID = null; // si pones un id, será la primera principal de c
 // win: [[inicio, fin], ...]. Misión de evento (durmiendo: noches del lunes y martes; tren: ida y vuelta): solo se reparte si en ese momento estás en esa franja
 // (extra, no cuenta como la principal en curso) y caduca al terminar si no se cumple.
 export const POOL = [
-  // EVENTOS: cada uno se reparte a UN solo jugador ("for"), repartidos a partes iguales (3 y 3).
-  { id: "s-tren", for: "mario", kind: "photo", xp: 130, short: "Rival en el tren", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-05T09:15:00+02:00", "2026-10-05T12:44:00+02:00"], ["2026-10-07T18:56:00+02:00", "2026-10-07T22:25:00+02:00"]] },
-  { id: "s-puente-rival", for: "veronica", kind: "photo", xp: 120, short: "Cruzando el puente", t: "Foto de {r} cruzando el Puente Romano de Cangas.", win: [["2026-10-05T15:30:00+02:00", "2026-10-05T20:30:00+02:00"], ["2026-10-06T17:00:00+02:00", "2026-10-06T20:30:00+02:00"], ["2026-10-07T09:00:00+02:00", "2026-10-07T14:00:00+02:00"]] },
-  { id: "s-basilica", for: "mario", kind: "photo", xp: 130, short: "Ante la basílica", t: "Foto de {r} mirando la basílica de Covadonga.", win: [["2026-10-06T14:50:00+02:00", "2026-10-06T17:30:00+02:00"]] },
-  { id: "s-estatua", for: "veronica", kind: "photo", xp: 150, short: "Imitando una estatua", t: "Foto de {r} imitando la pose de una estatua de Oviedo.", win: [["2026-10-07T15:50:00+02:00", "2026-10-07T18:35:00+02:00"]] },
-  { id: "s-durmiendo-lun", for: "mario", kind: "photo", xp: 200, short: "Rival dormido (lunes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-05T23:00:00+02:00", "2026-10-06T08:00:00+02:00"]] },
-  { id: "s-durmiendo-mar", for: "veronica", kind: "photo", xp: 200, short: "Rival dormido (martes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-06T23:00:00+02:00", "2026-10-07T08:00:00+02:00"]] },
+  // EVENTOS: franjas fijas (tren y noches). A quién le toca cada uno se sortea al azar una vez, a partes iguales (2 y 2).
+  { id: "s-tren-ida", kind: "photo", xp: 130, short: "Rival en el tren (ida)", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-05T09:15:00+02:00", "2026-10-05T12:44:00+02:00"]] },
+  { id: "s-tren-vuelta", kind: "photo", xp: 130, short: "Rival en el tren (vuelta)", t: "Hazle una foto a {r} en el tren.", win: [["2026-10-07T18:56:00+02:00", "2026-10-07T22:25:00+02:00"]] },
+  { id: "s-durmiendo-lun", kind: "photo", xp: 200, short: "Rival dormido (lunes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-05T23:00:00+02:00", "2026-10-06T08:00:00+02:00"]] },
+  { id: "s-durmiendo-mar", kind: "photo", xp: 200, short: "Rival dormido (martes)", t: "Es de noche: hazle una foto a {r} durmiendo.", win: [["2026-10-06T23:00:00+02:00", "2026-10-07T08:00:00+02:00"]] },
   { id: "s-lagos", kind: "video", xp: 180, short: "Rival en los lagos", t: "Graba un vídeo donde se vean {r} y los lagos de Covadonga." },
   { id: "s-andando", kind: "video", xp: 160, short: "Rival andando", t: "Graba a {r} andando sin que se dé cuenta." },
   { id: "s-fuente", kind: "video", xp: 170, short: "Bebiendo en la fuente", t: "Graba a {r} bebiendo de la fuente de la capilla." },

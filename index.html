@@ -269,6 +269,8 @@ nav .badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:16px;heigh
    <div class="sec-h"><h2>Zonas</h2><span class="px">GPS</span></div>
    <div class="panel radar"><span class="dot" id="gDot"></span><span id="gTxt">Radar apagado</span><button class="btn sm" id="gBtn">Activar</button></div>
    <div id="zoneList"></div>
+   <div class="sec-h"><h2>Lugares</h2><span class="px">Todo el viaje</span></div>
+   <div id="placeList"></div>
   </section>
 
   <!-- DUELO -->
@@ -319,8 +321,14 @@ const ZONES=[
  {id:"lag",name:"Lagos de Covadonga",lat:43.2717,lng:-4.9869,r:1500,ico:"🏔️",xp:150,msg:"Foto con el lago y los Picos."}
 ];
 const DAYKEYS=["lun","mar","mie"],DAYDATE={lun:"2026-10-05",mar:"2026-10-06",mie:"2026-10-07"},DAYN={lun:"Lunes",mar:"Martes",mie:"Miércoles"};
+const PLACES=[
+ {id:"lugar-puente",name:"Puente Romano de Cangas",ico:"🌉",xp:120,t:"Foto de tu rival cruzando el Puente Romano de Cangas."},
+ {id:"lugar-basilica",name:"Basílica de Covadonga",ico:"⛪",xp:130,t:"Foto de tu rival mirando la basílica de Covadonga."},
+ {id:"lugar-estatua",name:"Estatua de Oviedo",ico:"🗿",xp:150,t:"Foto de tu rival imitando la pose de una estatua de Oviedo."}
+];
 const MISSIONS=[];
 ZONES.forEach(z=>MISSIONS.push({id:"llegada-"+z.id,kind:"zone",zone:z.id,title:"Conquistar "+z.name,xp:z.xp}));
+PLACES.forEach(l=>MISSIONS.push({id:l.id,kind:"place",title:l.name,short:l.name,xp:l.xp}));
 const MID=Object.fromEntries(MISSIONS.map(m=>[m.id,m]));
 const TITLES=["Novato","Aprendiz","Rastreador","Explorador","Cazador","Veterano","Élite","Maestro","Leyenda","Mito de los Picos"];
 const PASSICO=["🎖️","🧭","🕶️","🔥","🎬","💎","⚡","🏆","🌟","👑"];
@@ -506,6 +514,11 @@ function render(){
   const [rc]=rarity(z.xp);
   return `<div class="q r-${rc} ${dn?"done":""}" data-id="${id}">${left}<div class="tx"><b>${z.name}</b><small>${sub} <span class="xp">+${z.xp} XP</span></small></div>${btn}</div>`}).join("");
 
+ $("placeList").innerHTML=PLACES.map(l=>{
+  const dn=mine.done[l.id];
+  const left=dn&&dn.photo?`<img class="th" data-k="${dn.photo}" data-c="${NAMES[me]} · ${l.name}" src="${photoUrl(dn.photo)}" alt="">`:`<div class="ic">${l.ico}</div>`;
+  const [rc]=rarity(l.xp);
+  return `<div class="q r-${rc} ${dn?"done":""}" data-id="${l.id}">${left}<div class="tx"><b>${l.t}</b><small>${dn?"✓ Completada":"Cuando pases por allí"} <span class="xp">+${l.xp} XP</span></small></div><button class="${dn?"chip":"btn sm"} go">${dn?"Repetir":"Foto"}</button></div>`}).join("");
  renderDuel();renderGal();renderAch();renderAlert();tickCd();
 }
 
@@ -516,7 +529,7 @@ function renderDuel(){
  $("vs").innerHTML=side("mario",A)+side("veronica",B)+`<div class="mid">VS</div>`;
  $("tugA").style.width=(tot?A.xp/tot*100:50)+"%";$("tugB").style.width=(tot?B.xp/tot*100:50)+"%";
  $("lead").innerHTML=!tot?"Nadie ha puntuado. El primero que mueva ficha manda.":lead?`<b style="color:var(--${lead==="mario"?"mario":"vero"})">${NAMES[lead]}</b> gana por <b>${Math.abs(A.xp-B.xp)} XP</b>`:"<b>Empate técnico</b>. Desempatad ya.";
- const rows=[["Misiones",E=>E.length],["Principales",E=>E.filter(x=>x.secret).length],["Zonas",E=>E.filter(x=>x.m.kind==="zone").length],["Secundarias",E=>E.filter(x=>x.m.kind==="daily").length],["Vídeos",E=>E.filter(x=>isVid(x.photo)).length]];
+ const rows=[["Misiones",E=>E.length],["Principales",E=>E.filter(x=>x.secret).length],["Zonas",E=>E.filter(x=>x.m.kind==="zone").length],["Secundarias",E=>E.filter(x=>x.m.kind==="daily"||x.m.kind==="place").length],["Vídeos",E=>E.filter(x=>isVid(x.photo)).length]];
  let st=rows.map(([k,f])=>{const a=f(A.E),b=f(B.E);return `<div class="l ${a>b?"w":""}">${a}</div><div class="k">${k}</div><div class="r ${b>a?"w":""}">${b}</div>`}).join("");
  st+=`<div class="l ${A.got.length>B.got.length?"w":""}">${A.got.length}</div><div class="k">Logros</div><div class="r ${B.got.length>A.got.length?"w":""}">${B.got.length}</div>`;
  $("stats").innerHTML=st;
