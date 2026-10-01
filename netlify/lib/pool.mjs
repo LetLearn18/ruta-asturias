@@ -21,8 +21,8 @@ export const POOL = [
   { id: "s-historico", kind: "photo", xp: 140, short: "Algo histórico", t: "Foto de algo histórico de la zona donde estéis." },
   { id: "s-ventana", kind: "video", xp: 140, short: "Ventana del bus", t: "Graba a {r} mirando por la ventana del bus." },
   { id: "s-sidra-rival", kind: "photo", xp: 120, short: "Sidra en mano", t: "Foto de {r} con un vaso de sidra en la mano." },
+  { id: "s-brindis", kind: "photo", xp: 130, short: "Brindis", t: "Foto de {r} brindando, sin avisar." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },
-  { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
 ];
 
 // Misiones secundarias: cada día cada jugador recibe 4 al azar (1 de comida + 3 más), distintas entre los dos jugadores.
@@ -37,10 +37,8 @@ export const DAILY = [
   { id: "d-detalle", kind: "photo", xp: 50, short: "Detalle", t: "Foto a un detalle que casi nadie vería." },
   { id: "d-selfie", kind: "photo", xp: 50, short: "Selfie con paisaje", t: "Selfie con un paisaje bonito de fondo." },
   { id: "d-animal", kind: "photo", xp: 60, short: "Animal", t: "Foto a un animal." },
-  { id: "d-caminando", kind: "video", xp: 70, short: "Vídeo caminando", t: "Vídeo caminando por donde estés." },
   { id: "d-sonido", kind: "video", xp: 70, short: "Mejor sonido", t: "Vídeo con el mejor sonido del lugar (agua, viento, campanas…)." },
   { id: "d-sonrisa", kind: "photo", xp: 60, short: "Rival sonriendo", t: "Foto de {r} sonriendo." },
-  { id: "d-puente", kind: "photo", xp: 50, short: "Un puente", t: "Foto a un puente." },
   { id: "d-montana", kind: "photo", xp: 50, short: "La montaña", t: "Foto de la montaña más bonita que veas." },
   { id: "d-pareja", kind: "photo", xp: 70, short: "Los dos juntos", t: "Foto de los dos juntos." },
   { id: "d-cielo", kind: "photo", xp: 40, short: "El cielo", t: "Foto al cielo o a las nubes." },
@@ -49,7 +47,9 @@ export const DAILY = [
   { id: "d-verde", kind: "photo", xp: 50, short: "Algo verde", t: "Foto de lo más verde que veas." },
   { id: "d-iconico", kind: "photo", xp: 70, short: "Lo más icónico", t: "Foto de lo más icónico del lugar donde estés." },
   { id: "d-raro", kind: "photo", xp: 60, short: "Algo que no encaja", t: "Foto de algo que no encaja: lo más raro o fuera de lugar que veas." },
-  { id: "d-mirando", kind: "photo", xp: 70, short: "Rival mirando", t: "Foto de {r} mirando algo, sin que se dé cuenta." },
   { id: "d-pies", kind: "photo", xp: 50, short: "Tus pies", t: "Foto de tus pies en el sitio más bonito en el que estés." },
+  { id: "d-pequeno-grande", kind: "photo", xp: 60, short: "Pequeño y grande", t: "Foto de lo más pequeño y lo más grande que veas, en una misma foto." },
+  { id: "d-puerta", kind: "photo", xp: 50, short: "Puerta con encanto", t: "Foto de una puerta o ventana con encanto." },
+  { id: "d-olor", kind: "photo", xp: 50, short: "Huele increíble", t: "Foto de algo que huela increíble (un mercado, una panadería, una sidrería)." },
   { id: "d-movimiento", kind: "video", xp: 70, short: "Algo en movimiento", t: "Vídeo de 10 segundos de algo en movimiento (agua, nubes, gente, un animal)." },
 ];
