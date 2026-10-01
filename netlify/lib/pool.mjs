@@ -19,7 +19,7 @@ export const POOL = [
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },
   { id: "s-sombras-juntas", kind: "photo", xp: 130, short: "Sombras juntas", t: "Foto de vuestras dos sombras juntas." },
   { id: "s-historico", kind: "photo", xp: 140, short: "Algo histórico", t: "Foto de algo histórico de la zona donde estéis." },
-  { id: "s-ventana", kind: "video", xp: 140, short: "Mirada de película", t: "Graba a {r} mirando por la ventana del bus o del tren con cara de película." },
+  { id: "s-ventana", kind: "video", xp: 140, short: "Ventana del bus", t: "Graba a {r} mirando por la ventana del bus." },
   { id: "s-sidra-rival", kind: "photo", xp: 120, short: "Sidra en mano", t: "Foto de {r} con un vaso de sidra en la mano." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },
   { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
