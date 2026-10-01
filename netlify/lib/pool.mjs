@@ -10,9 +10,6 @@ export const POOL = [
   { id: "s-fuente", kind: "video", xp: 170, short: "Bebiendo en la fuente", t: "Graba a {r} bebiendo de la fuente de la capilla." },
   { id: "s-desprevenido", kind: "photo", xp: 140, short: "Rival desprevenido", t: "Hazle una foto a {r} sin que se dé cuenta." },
   { id: "s-reflejo", kind: "photo", xp: 130, short: "Reflejo", t: "Foto de {r} reflejado en el agua de un lago o río." },
-  { id: "s-comiendo", kind: "photo", xp: 120, short: "Rival comiendo", t: "Foto a {r} con la boca llena." },
-  { id: "s-pose", kind: "photo", xp: 120, short: "Pose épica", t: "Haz que {r} pose como un explorador legendario y dispara." },
-  { id: "s-selfie-raro", kind: "photo", xp: 120, short: "Selfie raro", t: "Selfie con {r} poniendo la peor cara posible." },
   { id: "s-espalda", kind: "photo", xp: 120, short: "De espaldas", t: "Foto a {r} de espaldas mirando el paisaje." },
   { id: "s-sombra", kind: "photo", xp: 110, short: "Sombra", t: "Foto a la sombra de {r} haciendo algo ridículo." },
 ];
