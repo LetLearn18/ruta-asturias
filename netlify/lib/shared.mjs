@@ -51,7 +51,7 @@ function quietHours() { // sin avisos de madrugada (solo producción)
   const h = +new Date().toLocaleString("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hour12: false });
   return h < 8 || h >= 23;
 }
-export function tick(pl) {
+export function tick(pl, name) {
   pl.secret ||= []; pl.done ||= {};
   if (!inWindow()) return { changed: false, added: false };
   const now = Date.now();
@@ -63,6 +63,7 @@ export function tick(pl) {
   if (pl.secret.length !== before) changed = true;
   // 2) eventos: se reparten solo dentro de su franja
   for (const m of POOL.filter(isEvent)) {
+    if (m.for && m.for !== name) continue; // cada evento es de un solo jugador
     if (pl.secret.some((x) => x.id === m.id)) continue;
     // En producción solo dentro de su franja. En preview, de uno en uno para poder probarlos.
     if (!prod && pl.secret.some((x) => x.event && !pl.done[x.id])) continue;
@@ -172,7 +173,7 @@ export async function advanceAll(skip) {
   const out = {};
   for (const p of PLAYERS) {
     const pl = await readPlayer(p);
-    const t = tick(pl);
+    const t = tick(pl, p);
     const dd = assignDaily(pl);
     if (t.changed || dd) {
       await writePlayer(p, pl);
